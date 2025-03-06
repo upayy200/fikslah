@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Kebun;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
+
 
 class AuthController extends Controller
 {
@@ -46,11 +48,6 @@ class AuthController extends Controller
         return redirect()->route('dashboard');
     }
 
-    public function logout()
-    {
-        Auth::logout();
-        return redirect('/login');
-    }
    
 public function updatePassword()
 {
@@ -63,4 +60,17 @@ public function updatePassword()
     return "User tidak ditemukan!";
 }
 
+
+
+    public function logout(Request $request): RedirectResponse
+    {
+        Auth::logout(); // Logout pengguna
+        
+        $request->session()->invalidate(); // Hapus sesi
+        $request->session()->regenerateToken(); // Regenerasi token CSRF
+
+        return redirect('/login'); // Redirect ke halaman login
+    }
 }
+
+

@@ -9,7 +9,7 @@
 .navbar .dropdown:hover > .dropdown-menu {
     opacity: 1;
     visibility: visible;
-    transition-delay: 0.5s; /* Tambahkan delay 0.5 detik */
+    transition-delay: 0.3s; /* Tambahkan delay 0.5 detik */
 }
 
 /* Agar submenu dropdown muncul ke samping */
@@ -31,7 +31,7 @@
 .dropdown-submenu:hover > .dropdown-menu {
     opacity: 1;
     visibility: visible;
-    transition-delay: 0.5s;
+    transition-delay: 0.3s;
 }
 
 /* Submenu akan tetap tampil jika ada class .show */

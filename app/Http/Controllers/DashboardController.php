@@ -4,15 +4,22 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Kebun;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Routing\Controller;
 
 class DashboardController extends Controller
 {
+    public function __construct()
+    {
+        // Pastikan hanya user yang sudah login bisa mengakses dashboard
+        $this->middleware('auth');
+    }
+
     public function index()
     {
         // Ambil ID kebun yang dipilih dari session
         $kebun_id = session('selected_kebun');
-                
-        
+
         // Jika tidak ada kebun yang dipilih, arahkan ke halaman pemilihan kebun
         if (!$kebun_id) {
             return redirect()->route('pilih.kebun')->withErrors('Silakan pilih kebun terlebih dahulu.');
@@ -39,6 +46,11 @@ class DashboardController extends Controller
         return view('dashboard.index', compact('kebun'));
     }
 
+    public function showKebunSelection()
+    {
+        return view('auth.pilih_kebun'); // Pastikan ada view 'pilih_kebun.blade.php'
+    }
+
     public function pilihKebun(Request $request)
     {
         // Validasi request
@@ -52,19 +64,13 @@ class DashboardController extends Controller
         // Redirect ke dashboard
         return redirect()->route('dashboard.index');
     }
-    public function showKebunSelection()
-{
-    return view('auth.pilih_kebun'); // Pastikan ada view 'pilih_kebun.blade.php'
-}
-public function selectKebun(Request $request)
-{
-    $request->validate([
-        'kebun_id' => 'required|exists:kebuns,id'
-    ]);
 
-    session(['selected_kebun' => $request->kebun_id]);
+    public function logout(Request $request)
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-    return redirect()->route('dashboard');
-}
-
+        return redirect('/login')->with('status', 'Anda telah logout.');
+    }
 }

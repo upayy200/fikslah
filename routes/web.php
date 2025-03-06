@@ -30,3 +30,4 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/{kebun_id}', [DashboardController::class, 'show'])->name('dashboard.show');
 });
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
