@@ -30,13 +30,13 @@
                             Referensi
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">Mandor | Tanaman yg membawahi Mandor Panen</a></li>
+                            <li><a class="dropdown-item" href="{{ route('referensi.mandor_panen') }}">Mandor | Tanaman yg membawahi Mandor Panen</a></li>
                             <li class="nav-item dropdown">
                                 <a class="dropdown-item dropdown-toggle" href="#" id="tehDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     Mandor Karyawan
                                 </a>
                                 <ul class="dropdown-menu" aria-labelledby="tehDropdown">
-                                    <li><a class="dropdown-item" href="#">Input Mandor Karyawan</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('referensi.mandor_karyawan_input') }}">Input Mandor Karyawan</a></li>
                                     <li><a class="dropdown-item" href="#">Pergantian Mandor Karyawan</a></li>
                                 </ul>
                             </li>

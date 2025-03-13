@@ -12,30 +12,50 @@ use Illuminate\Http\RedirectResponse;
 
 class AuthController extends Controller
 {
-    public function showLoginForm()
-    {
-        return view('auth.login');
-    }
+  public function login(Request $request)
+{
+    $request->validate([
+        'username' => 'required',
+        'password' => 'required'
+    ]);
 
-    public function login(Request $request)
-    {
-        $request->validate([
-            'username' => 'required',
-            'password' => 'required'
-        ]);
+    // Simpan user dummy di session tanpa database
+    session([
+        'user_logged_in' => true,
+        'user_id' => 1,
+        'username' => $request->username,
+        'user_role' => 'admin',
+    ]);
 
-        if (Auth::attempt(['username' => $request->username, 'password' => $request->password])) {
-            return redirect()->route('pilih.kebun');
-        }
+    return redirect()->route('pilih.kebun');
+}
 
-        return back()->withErrors(['username' => 'Username atau password salah.']);
-    }
+
+    // public function login(Request $request)
+    // {
+    //     $request->validate([
+    //         'username' => 'required',
+    //         'password' => 'required'
+    //     ]);
+
+    //     if (Auth::attempt(['username' => $request->username, 'password' => $request->password])) {
+    //         return redirect()->route('pilih.kebun');
+    //     }
+
+    //     return back()->withErrors(['username' => 'Username atau password salah.']);
+    // }
+
+
+    
 
     public function showKebunSelection()
     {
         $kebunList = Kebun::all();
         return view('auth.pilih_kebun', compact('kebunList'));
     }
+
+
+
 
     public function selectKebun(Request $request)
     {
@@ -59,6 +79,8 @@ public function updatePassword()
     }
     return "User tidak ditemukan!";
 }
+
+
 
 
 

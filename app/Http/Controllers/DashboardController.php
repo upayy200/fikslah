@@ -15,6 +15,7 @@ class DashboardController extends Controller
         $this->middleware('auth');
     }
 
+    
     public function index()
     {
         // Ambil ID kebun yang dipilih dari session
