@@ -36,7 +36,7 @@
                                     Mandor Karyawan
                                 </a>
                                 <ul class="dropdown-menu" aria-labelledby="tehDropdown">
-                                    <li><a class="dropdown-item" href="{{ route('referensi.mandor_karyawan_input') }}">Input Mandor Karyawan</a></li>
+                                    <li><a class="dropdown-item" href="/referensi/mandor_karyawan_input">Input Mandor Karyawan</a></li>
                                     <li><a class="dropdown-item" href="#">Pergantian Mandor Karyawan</a></li>
                                 </ul>
                             </li>

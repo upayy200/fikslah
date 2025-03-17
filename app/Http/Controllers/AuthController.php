@@ -12,38 +12,22 @@ use Illuminate\Http\RedirectResponse;
 
 class AuthController extends Controller
 {
-  public function login(Request $request)
-{
-    $request->validate([
-        'username' => 'required',
-        'password' => 'required'
-    ]);
-
-    // Simpan user dummy di session tanpa database
-    session([
-        'user_logged_in' => true,
-        'user_id' => 1,
-        'username' => $request->username,
-        'user_role' => 'admin',
-    ]);
-
-    return redirect()->route('pilih.kebun');
-}
 
 
-    // public function login(Request $request)
-    // {
-    //     $request->validate([
-    //         'username' => 'required',
-    //         'password' => 'required'
-    //     ]);
 
-    //     if (Auth::attempt(['username' => $request->username, 'password' => $request->password])) {
-    //         return redirect()->route('pilih.kebun');
-    //     }
+    public function login(Request $request)
+    {
+        $request->validate([
+            'username' => 'required',
+            'password' => 'required'
+        ]);
 
-    //     return back()->withErrors(['username' => 'Username atau password salah.']);
-    // }
+        if (Auth::attempt(['username' => $request->username, 'password' => $request->password])) {
+            return redirect()->route('pilih.kebun');
+        }
+
+        return back()->withErrors(['username' => 'Username atau password salah.']);
+    }
 
 
     
