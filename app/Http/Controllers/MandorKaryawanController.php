@@ -9,21 +9,18 @@ class MandorKaryawanController extends Controller
 {
     public function index()
     {
-        // Ambil data afdeling dari tabel AMCO_Afdeling
-        $dataAfdeling = DB::table('AMCO_Afdeling')->get();
-    
-        // Ambil data mandor karyawan dari tabel AMCO_MandorKaryawan dengan pagination
-        $dataMandorKaryawan = DB::table('AMCO_MandorKaryawan')->paginate(50);
-    
+        // Gunakan koneksi 'AMCO' untuk tabel AMCO_Afdeling dan AMCO_MandorKaryawan
+        $dataAfdeling = DB::connection('AMCO')->table('AMCO_Afdeling')->get();
+        $dataMandorKaryawan = DB::connection('AMCO')->table('AMCO_MandorKaryawan')->paginate(50);
+
         return view('referensi.mandor_karyawan_input', compact('dataAfdeling', 'dataMandorKaryawan'));
     }
-    
 
     // Ambil daftar mandor berdasarkan KodeAfdeling
     public function getMandorByAfdeling($kd_afd)
     {
         try {
-            $mandor = DB::table('AMCO_Dik')
+            $mandor = DB::connection('AMCO')->table('AMCO_Dik')
                 ->where('KD_AFD', $kd_afd)
                 ->get(['REG', 'NAMA']);
 
@@ -35,9 +32,6 @@ class MandorKaryawanController extends Controller
 
     public function store(Request $request)
     {
-        // Debugging: Cek input yang diterima
-        dd($request->all());
-
         $request->validate([
             'bulan' => 'nullable|date',
             'kd_afd' => 'required|exists:AMCO_Afdeling,KodeAfdeling',
@@ -45,7 +39,7 @@ class MandorKaryawanController extends Controller
             'reg_mandor' => 'required|exists:AMCO_Dik,REG',
         ]);
 
-        DB::connection('sqlsrv')->table('AMCO_MandorKaryawan')->insert([
+        DB::connection('AMCO')->table('AMCO_MandorKaryawan')->insert([
             'Tanggal' => $request->bulan,
             'KodeAfdeling' => $request->kd_afd,
             'KodeUnit' => $request->plant,
@@ -60,7 +54,7 @@ class MandorKaryawanController extends Controller
     public function getPlantByAfdeling($kd_afd)
     {
         try {
-            $plant = DB::connection('sqlsrv')->table('AMCO_Afdeling')
+            $plant = DB::connection('AMCO')->table('AMCO_Afdeling')
                 ->where('KodeAfdeling', $kd_afd)
                 ->first(['Plant']);
 
@@ -75,12 +69,12 @@ class MandorKaryawanController extends Controller
         $request->validate([
             'kd_afd' => 'required|exists:AMCO_Afdeling,KodeAfdeling',
             'reg_mandor' => 'required|exists:AMCO_Dik,REG',
+            'bulan' => 'required|date_format:Y-m',
         ]);
 
-        // Ambil tahun dan bulan dari input "month"
         list($tahun, $bulan) = explode('-', $request->bulan);
 
-        $data = DB::connection('sqlsrv')->table('AMCO_Dik')
+        $data = DB::TABLE('AMCO_Dik')
             ->whereYear('TANGGAL', $tahun)
             ->whereMonth('TANGGAL', $bulan)
             ->where("REG", $request->reg_mandor)

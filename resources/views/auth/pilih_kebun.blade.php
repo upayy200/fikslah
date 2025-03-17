@@ -15,11 +15,13 @@
                     @csrf
                     <div class="mb-3">
                         <label for="kebun" class="form-label">Kebun</label>
-                        <select class="form-control" id="kebun" name="kebun_id" required>
-                            @foreach ($kebunList as $kebun)
-                                <option value="{{ $kebun->id }}">{{ $kebun->nama_kebun }}</option>
+                        <select name="kebun_id" class="form-control">
+                            <option value="">Pilih Kebun</option>
+                            @foreach($kebunList as $kebun)
+                                <option value="{{ $kebun->KodeKebun }}">{{ $kebun->NamaKebun }}</option>
                             @endforeach
                         </select>
+                        
                     </div>
                     <button type="submit" class="btn btn-primary w-100">Masuk Aplikasi</button>
                 </form>

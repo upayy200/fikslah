@@ -1,3 +1,4 @@
+
 <head>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -20,8 +21,15 @@
                     <label class="block font-medium text-gray-600">Kd.Afd/Bagan:</label>
                     <select name="kd_afd" id="kd_afd" class="border p-2 w-full rounded-lg bg-white focus:ring-2 focus:ring-blue-400" required>
                         <option value="">Pilih</option>
-                        @foreach ($dataAfdeling as $afdeling)
+                        {{-- @foreach ($dataAfdeling as $afdeling)
                             <option value="{{ $afdeling->KodeAfdeling }}">{{ $afdeling->NamaAfdeling }}</option>
+                        @endforeach --}}
+                        @php
+                            $query = DB::CONNECTION("AMCO")->TABLE("AMCO_Afdeling")->WHERE("KodeKebun", session()->get('selected_kebun'))->get();
+                        @endphp
+
+                        @foreach ($query as $item)
+                        <option value="{{ $item->KodeAfdeling }}">{{ $item->NamaAfdeling }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -29,7 +37,7 @@
                 <!-- Input Plant -->
                 <div>
                     <label class="block font-medium text-gray-600">Plant</label>
-                    <input type="text" id="plant" class="border p-2 w-full rounded-lg bg-gray-100" readonly>
+                    <input type="text" id="plant" class="border p-2 w-full rounded-lg bg-gray-100" value="{{ session()->get("selected_kebun") }}" readonly>
                 </div>
 
                 <!-- Dropdown Reg. Mandor -->
@@ -108,11 +116,11 @@ document.addEventListener("DOMContentLoaded", function() {
         try {
             const response = await fetch(`/referensi/get-plant/${kdAfd}`);
             const data = await response.json();
-            plantField.value = data ? data.Plant : "";
+            //plantField.value = data ? data.Plant : "";
             await fetchMandor(kdAfd);
         } catch (error) {
             console.error("Error:", error);
-            plantField.value = "Gagal memuat data";
+            //plantField.value = "Gagal memuat data";
         }
     }
 

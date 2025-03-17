@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => env('DB_CONNECTION', 'sqlsrv'),
 
     /*
     |--------------------------------------------------------------------------
@@ -97,22 +97,33 @@ return [
             'sslmode' => 'prefer',
         ],
 
-        'sqlsrv' => [
+        'MASTERREF' => [
             'driver' => 'sqlsrv',
-            'url' => env('DB_URL'),
-            'host' => env('DB_HOST', 'localhost'),
-            'port' => env('DB_PORT', '1433'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
-            'charset' => env('DB_CHARSET', 'utf8'),
+            'host' => env('DB_MASTERREF_HOST', 'localhost'),
+            'port' => env('DB_MASTERREF_PORT', '1433'),
+            'database' => env('DB_MASTERREF_DATABASE', 'MASTERREF'),
+            'username' => env('DB_MASTERREF_USERNAME', 'sa'),
+            'password' => env('DB_MASTERREF_PASSWORD', 'upi123'),
+            'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
-            // 'encrypt' => env('DB_ENCRYPT', 'yes'),
-            // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
-        
+
+        'AMCO' => [
+            'driver' => 'sqlsrv',
+            'host' => env('DB_AMCO_HOST', 'localhost'),
+            'port' => env('DB_AMCO_PORT', '1433'),
+            'database' => env('DB_AMCO_DATABASE', 'AMCO'),
+            'username' => env('DB_AMCO_USERNAME', 'sa'),
+            'password' => env('DB_AMCO_PASSWORD', 'upi123'),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
     ],
+
+
+
 
     /*
     |--------------------------------------------------------------------------
@@ -147,7 +158,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_database_'),
+            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_') . '_database_'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 

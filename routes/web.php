@@ -1,4 +1,5 @@
-<?php 
+<?php
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
@@ -52,4 +53,6 @@ Route::get('/get-data', [DropdownController::class, 'getData'])->name('get.data'
 Route::post('/mandor-karyawan/get-data', [MandorKaryawanController::class, 'getData'])
     ->name('referensi.mandor_karyawan_input.getData');
 
-    
+route::get('/test', function () {
+    return view('tes');
+});
