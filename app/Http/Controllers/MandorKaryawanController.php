@@ -9,14 +9,14 @@ class MandorKaryawanController extends Controller
 {
     public function index()
     {
-        // Gunakan koneksi 'AMCO' untuk tabel AMCO_Afdeling dan AMCO_MandorKaryawan
-        $dataAfdeling = DB::connection('AMCO')->table('AMCO_Afdeling')->get();
-        $dataMandorKaryawan = DB::connection('AMCO')->table('AMCO_MandorKaryawan')->paginate(50);
+        // Ambil data mandor karyawan dengan pagination
+        $dataMandorKaryawan = DB::connection('AMCO')->table('AMCO_MandorKaryawan')
+            ->select('Tanggal', 'sts', 'Register', 'RegSAP', 'Nama')
+            ->paginate(50);
 
-        return view('referensi.mandor_karyawan_input', compact('dataAfdeling', 'dataMandorKaryawan'));
+        return view('referensi.mandor_karyawan_input', compact('dataMandorKaryawan'));
     }
 
-    // Ambil daftar mandor berdasarkan KodeAfdeling
     public function getMandorByAfdeling($kd_afd)
     {
         try {
@@ -69,18 +69,34 @@ class MandorKaryawanController extends Controller
         $request->validate([
             'kd_afd' => 'required|exists:AMCO_Afdeling,KodeAfdeling',
             'reg_mandor' => 'required|exists:AMCO_Dik,REG',
-            'bulan' => 'required|date_format:Y-m',
+            'bulan' => 'required|date_format:Y-m-d',
         ]);
 
         list($tahun, $bulan) = explode('-', $request->bulan);
 
-        $data = DB::TABLE('AMCO_Dik')
+        $data = DB::connection('AMCO')->table('AMCO_Dik')
             ->whereYear('TANGGAL', $tahun)
             ->whereMonth('TANGGAL', $bulan)
             ->where("REG", $request->reg_mandor)
             ->get();
 
-
         return response()->json($data);
+    }
+
+    public function getKaryawanByMandor(Request $request)
+    {
+        $regMandor = $request->input('reg_mandor');
+
+        $tanggal = $request->input('tanggal');
+        $kdAfd = $request->input('kd_afd');
+        $karyawan = DB::connection('AMCO')
+            ->table('AMCO_MandorKaryawan')
+            ->select('Register', 'RegSAP', 'Nama', 'sts')
+            ->where('Regmdr', $regMandor)
+            ->where('tanggal', $tanggal)
+            ->where('KodeAfdeling', $kdAfd)
+            ->get();
+        dd($karyawan);
+        return response()->json($karyawan);
     }
 }

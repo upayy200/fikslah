@@ -52,6 +52,8 @@ Route::get('/get-data', [DropdownController::class, 'getData'])->name('get.data'
 
 Route::post('/mandor-karyawan/get-data', [MandorKaryawanController::class, 'getData'])
     ->name('referensi.mandor_karyawan_input.getData');
+Route::post('/mandor-karyawan', [MandorKaryawanController::class, 'getKaryawanByMandor'])
+    ->name('referensi.mandor_karyawan_input.getKaryawanByMandor');
 
 route::get('/test', function () {
     return view('tes');

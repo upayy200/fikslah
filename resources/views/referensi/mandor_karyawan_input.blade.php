@@ -12,8 +12,8 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <!-- Input Bulan -->
                 <div>
-                    <label class="block font-medium text-gray-600">Bulan</label>
-                    <input type="month" name="bulan" id="bulan" class="border p-2 w-full rounded-lg focus:ring-2 focus:ring-blue-400" required>
+                    <label class="block font-medium text-gray-600">Tanggal</label>
+                    <input type="datetime-local" name="tanggal" id="tanggal" class="border p-2 w-full rounded-lg focus:ring-2 focus:ring-blue-400" required>
                 </div>
 
                 <!-- Dropdown Kd.Afd/Bagan -->
@@ -25,7 +25,7 @@
                             <option value="{{ $afdeling->KodeAfdeling }}">{{ $afdeling->NamaAfdeling }}</option>
                         @endforeach --}}
                         @php
-                            $query = DB::CONNECTION("AMCO")->TABLE("AMCO_Afdeling")->WHERE("KodeKebun", session()->get('selected_kebun'))->get();
+                            $query = DB::connection("AMCO")->TABLE("AMCO_Afdeling")->WHERE("KodeKebun", session()->get('selected_kebun'))->get();
                         @endphp
 
                         @foreach ($query as $item)
@@ -96,12 +96,15 @@ document.addEventListener("DOMContentLoaded", function() {
             const data = await response.json();
             regMandorDropdown.innerHTML = '<option value="">Pilih Mandor</option>';
             if (Array.isArray(data) && data.length > 0) {
+                console.log(data);
                 data.forEach(mandor => {
-                    let option = document.createElement("option");
+                    let option = document.createElement("option"); // <option value=""
                     option.value = mandor.REG;
                     option.textContent = mandor.NAMA;
                     regMandorDropdown.appendChild(option);
                 });
+
+                //foreach($query as $item)
             } else {
                 regMandorDropdown.innerHTML = '<option value="">Tidak ada data mandor.</option>';
             }
@@ -116,7 +119,7 @@ document.addEventListener("DOMContentLoaded", function() {
         try {
             const response = await fetch(`/referensi/get-plant/${kdAfd}`);
             const data = await response.json();
-            //plantField.value = data ? data.Plant : "";
+            plantField.value = data && data.Plant ? data.Plant : "Data tidak ditemukan";
             await fetchMandor(kdAfd);
         } catch (error) {
             console.error("Error:", error);
@@ -130,24 +133,26 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     btnSimpan.addEventListener("click", async function() {
-        const bulan = bulanField.value;
+        const tanggal = new Date(document.getElementById("tanggal").value).toISOString().slice(0, 23).replace("T", " ");
         const kdAfd = kdAfdDropdown.value;
         const regMandor = regMandorDropdown.value;
 
-        if (!bulan) {
-            alert("Silakan pilih bulan terlebih dahulu.");
-            return;
-        }
+        if (!tanggal) {
+        alert("Silakan pilih Tanggal terlebih dahulu.");
+        return;
+    }
+
 
         try {
-            const response = await fetch("/mandor-karyawan/get-data", {
+            const response = await fetch("/mandor-karyawan", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
                 },
-                body: JSON.stringify({ bulan, kd_afd: kdAfd, reg_mandor: regMandor })
+                body: JSON.stringify({ tanggal, kd_afd: kdAfd, reg_mandor: regMandor })
             });
+            console.log(response)
 
             const data = await response.json();
             console.log(data);
@@ -158,10 +163,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 data.forEach(row => {
                     const newRow = tableBody.insertRow();
                     newRow.innerHTML = `
-                        <td class="border p-2">${row.REG}</td>
-                        <td class="border p-2">${row.REG_SAP}</td>
-                        <td class="border p-2">${row.SIPIL}</td>
-                        <td class="border p-2">${row.NAMA}</td>
+                        <td class="border p-2">${row.register}</td>
+                        <td class="border p-2">${row.RegSAP}</td>
+                        <td class="border p-2">${row.sts}</td>
+                        <td class="border p-2">${row.Nama}</td>
                         <td class="border p-2">${row.NAMA_JAB}</td>
                     `;
                 });
