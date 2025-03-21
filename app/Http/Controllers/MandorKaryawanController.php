@@ -85,24 +85,18 @@ class MandorKaryawanController extends Controller
 
     public function getKaryawanByMandor(Request $request)
     {
-        try {
-            $request->validate([
-                'tanggal' => 'required|date',
-                'kd_afd' => 'required',
-                'reg_mandor' => 'required'
-            ]);
+        $regMandor = $request->input('reg_mandor');
 
-            $karyawan = DB::connection('AMCO')
-                ->table('AMCO_MandorKaryawan')
-                ->select('Register', 'RegSAP', 'Nama', 'sts')
-                ->whereDate('tanggal', $request->tanggal)
-                ->where('kd_afd', $request->kd_afd)
-                ->where('reg_mandor', $request->reg_mandor)
-                ->get();
-            dd($karyawan);
-            return response()->json($karyawan);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+        $tanggal = $request->input('tanggal');
+        $kdAfd = $request->input('kd_afd');
+        $karyawan = DB::connection('AMCO')
+            ->table('AMCO_MandorKaryawan')
+            ->select('Register', 'RegSAP', 'Nama', 'sts')
+            ->where('Regmdr', $regMandor)
+            ->where('tanggal', $tanggal)
+            ->where('KodeAfdeling', $kdAfd)
+            ->get();
+        dd($karyawan);
+        return response()->json($karyawan);
     }
 }
