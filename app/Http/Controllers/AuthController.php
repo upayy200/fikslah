@@ -75,6 +75,7 @@ class AuthController extends Controller
         // Ambil data dari database MASTERREF tanpa model
         $kebunList = DB::connection('MASTERREF')->table('Ref_Kebun')
             ->select('KodeKebun', 'NamaKebun')
+            ->where('Status', 1) 
             ->get();
 
         return view('auth.pilih_kebun', compact('kebunList'));
@@ -100,6 +101,7 @@ class AuthController extends Controller
 
         session(['selected_kebun' => $request->kebun_id]);
         session()->put('selected_kebun', $request->kebun_id);
+
 
         return redirect('/dashboard');
     }

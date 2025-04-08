@@ -1,185 +1,282 @@
-
+<!DOCTYPE html>
+<html lang="id">
 <head>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input Mandor Karyawan</title>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f4f4f4;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        
+        button {
+            background: #28a745;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        button:hover {
+            background: #218838;
+        }
+        
+        .table-container {
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        table, th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        
+        th {
+            background: #28a745;
+            color: white;
+        }
+        
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+    </style>
 </head>
-
-<div class="container mx-auto mt-6 p-4">
-    <div class="bg-white shadow-lg rounded-lg p-6">
-        <h2 class="text-xl font-semibold text-gray-700 mb-4">Form Data Mandor</h2>
-        <form id="form-mandor">
-            @csrf
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <!-- Input Bulan -->
-                <div>
-                    <label class="block font-medium text-gray-600">Tanggal</label>
-                    <input type="datetime-local" name="tanggal" id="tanggal" class="border p-2 w-full rounded-lg focus:ring-2 focus:ring-blue-400" required>
-                </div>
-
-                <!-- Dropdown Kd.Afd/Bagan -->
-                <div>
-                    <label class="block font-medium text-gray-600">Kd.Afd/Bagan:</label>
-                    <select name="kd_afd" id="kd_afd" class="border p-2 w-full rounded-lg bg-white focus:ring-2 focus:ring-blue-400" required>
-                        <option value="">Pilih</option>
-                        {{-- @foreach ($dataAfdeling as $afdeling)
-                            <option value="{{ $afdeling->KodeAfdeling }}">{{ $afdeling->NamaAfdeling }}</option>
-                        @endforeach --}}
-                        @php
-                            $query = DB::connection("AMCO")->TABLE("AMCO_Afdeling")->WHERE("KodeKebun", session()->get('selected_kebun'))->get();
-                        @endphp
-
-                        @foreach ($query as $item)
-                        <option value="{{ $item->KodeAfdeling }}">{{ $item->NamaAfdeling }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- Input Plant -->
-                <div>
-                    <label class="block font-medium text-gray-600">Plant</label>
-                    <input type="text" id="plant" class="border p-2 w-full rounded-lg bg-gray-100" value="{{ session()->get("selected_kebun") }}" readonly>
-                </div>
-
-                <!-- Dropdown Reg. Mandor -->
-                <div>
-                    <label class="block font-medium text-gray-600">Reg. Mandor</label>
-                    <select name="reg_mandor" id="reg_mandor" class="border p-2 w-full rounded-lg bg-white focus:ring-2 focus:ring-blue-400" required>
-                        <option value="">Pilih Kd.Afd terlebih dahulu</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Tombol Simpan -->
-            <div class="mt-6 text-right">
-                <button type="button" id="btn-simpan" class="bg-blue-500 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition">
-                    Tampilkan Data
-                </button>
-            </div>
+<body>
+    <div class="container">
+        <h1>Input Mandor Karyawan</h1>
+        <form id="filter-form">
+            Bulan: <input type="date" id="bulan" name="bulan">
+            Afdeling:
+            <select id="kd_afd" name="kd_afd">
+                <option value="">Pilih Afdeling</option>
+                @foreach($afdeling as $afd)
+                    <option value="{{ $afd->id }}">{{ $afd->nama }}</option>
+                @endforeach
+            </select>
+            Plant: <input type="text" id="plant" name="plant" value="{{ $plant ?? 'Tidak Ditemukan' }}" readonly>
+            Mandor:
+            <select id="reg_mandor" name="reg_mandor">
+                <option value="">Pilih Mandor</option>
+            </select>
+            <button type="button" id="cari">Cari</button>
         </form>
-    </div>
-</div>
 
-<!-- Tabel Hasil -->
-<div class="container mx-auto mt-6">
-    <div class="bg-white shadow-lg rounded-lg p-4">
-        <h2 class="text-lg font-semibold text-gray-700 mb-2">Hasil Pencarian</h2>
-        <table id="tabel-hasil" class="w-full border-collapse border border-gray-300 rounded-lg">
-            <thead class="bg-blue-500 text-white">
+        <h2>Data Karyawan</h2>
+        <table id="data-karyawan" style="display:none;">
+            <thead>
                 <tr>
-                    <th class="border p-2">Register</th>
-                    <th class="border p-2">Reg. SAP</th>
-                    <th class="border p-2">Status</th>
-                    <th class="border p-2">Nama</th>
-                    <th class="border p-2">Jabatan</th>
+                    <th>No</th>
+                    <th>Register</th>
+                    <th>Reg SAP</th>
+                    <th>Status</th>
+                    <th>Nama</th>
+                    <th>Jabatan</th>
+                    <th>Aksi</th>
                 </tr>
             </thead>
-            <tbody class="bg-gray-50">
-                <!-- Data akan muncul di sini -->
-            </tbody>
+            <tbody></tbody>
         </table>
+
+        <h2>Tambah Karyawan</h2>
+        <select id="new-karyawan">
+            <option value="">Pilih Karyawan</option>
+        </select>
+        <button id="tambah-karyawan">Tambah</button>
     </div>
-</div>
 
+    
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    const kdAfdDropdown = document.getElementById("kd_afd");
-    const regMandorDropdown = document.getElementById("reg_mandor");
-    const plantField = document.getElementById("plant");
-    const btnSimpan = document.getElementById("btn-simpan");
-    const bulanField = document.getElementById("bulan");
-
-    async function fetchMandor(kdAfd) {
-        if (!kdAfd) return;
-        regMandorDropdown.innerHTML = '<option value="">Memuat...</option>';
-        try {
-            const response = await fetch(`/referensi/get-mandor/${kdAfd}`);
-            const data = await response.json();
-            regMandorDropdown.innerHTML = '<option value="">Pilih Mandor</option>';
-            if (Array.isArray(data) && data.length > 0) {
-                console.log(data);
-                data.forEach(mandor => {
-                    let option = document.createElement("option"); // <option value=""
-                    option.value = mandor.REG;
-                    option.textContent = mandor.NAMA;
-                    regMandorDropdown.appendChild(option);
+    $(document).ready(function() {
+        // Inisialisasi Select2 untuk dropdown Tambah Karyawan
+        $('#new-karyawan').select2({
+            placeholder: "Cari Karyawan (Register/Nama)...",
+            allowClear: true,
+            width: '100%'
+        });
+    
+        // Event saat Afdeling berubah -> Load daftar mandor
+        $('#kd_afd').change(function() {
+            let kdAfd = $(this).val();
+            if (kdAfd) {
+                $.get(`/referensi/get-mandor/${kdAfd}`, function(data) {
+                    $('#reg_mandor').empty().append('<option value="">Pilih Mandor</option>');
+                    data.forEach(mandor => {
+                        $('#reg_mandor').append(`<option value="${mandor.Regmdr}">${mandor.NamaMandor}</option>`);
+                    });
                 });
-
-                //foreach($query as $item)
-            } else {
-                regMandorDropdown.innerHTML = '<option value="">Tidak ada data mandor.</option>';
             }
-        } catch (error) {
-            console.error("Error:", error);
-            regMandorDropdown.innerHTML = '<option>Gagal memuat data</option>';
-        }
-    }
-
-    async function fetchPlant(kdAfd) {
-        if (!kdAfd) return;
-        try {
-            const response = await fetch(`/referensi/get-plant/${kdAfd}`);
-            const data = await response.json();
-            plantField.value = data && data.Plant ? data.Plant : "Data tidak ditemukan";
-            await fetchMandor(kdAfd);
-        } catch (error) {
-            console.error("Error:", error);
-            //plantField.value = "Gagal memuat data";
-        }
-    }
-
-    kdAfdDropdown.addEventListener("change", async function() {
-        const kdAfd = this.value;
-        await fetchPlant(kdAfd);
-    });
-
-    btnSimpan.addEventListener("click", async function() {
-        const tanggal = new Date(document.getElementById("tanggal").value).toISOString().slice(0, 23).replace("T", " ");
-        const kdAfd = kdAfdDropdown.value;
-        const regMandor = regMandorDropdown.value;
-
-        if (!tanggal) {
-        alert("Silakan pilih Tanggal terlebih dahulu.");
-        return;
-    }
-
-
-        try {
-            const response = await fetch("/mandor-karyawan", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
-                },
-                body: JSON.stringify({ tanggal, kd_afd: kdAfd, reg_mandor: regMandor })
+        });
+    
+        // Function untuk load data karyawan di tabel utama
+        function loadKaryawan() {
+            let tanggal = $('#bulan').val();
+            let kdAfd = $('#kd_afd').val();
+            let regMandor = $('#reg_mandor').val();
+            
+            if (!tanggal || !kdAfd || !regMandor) {
+                alert('Harap pilih semua filter terlebih dahulu');
+                return;
+            }
+    
+            $.post('/referensi/get-karyawan', {
+                tanggal: tanggal,
+                kd_afd: kdAfd,
+                reg_mandor: regMandor,
+                _token: '{{ csrf_token() }}'
+            }, function(data) {
+                let tbody = $('#data-karyawan tbody');
+                tbody.empty();
+                data.forEach((row, index) => {
+                    tbody.append(`<tr>
+                        <td>${index + 1}</td>
+                        <td>${row.Register}</td>
+                        <td>${row.RegSAP}</td>
+                        <td>${row.sts}</td>
+                        <td>${row.Nama}</td>
+                        <td>${row.NAMA_JAB}</td>
+                        <td><button class="hapus-karyawan" data-id="${row.Register}">Hapus</button></td>
+                    </tr>`);
+                });
+                $('#data-karyawan').show();
             });
-            console.log(response)
-
-            const data = await response.json();
-            console.log(data);
-            const tableBody = document.querySelector("#tabel-hasil tbody");
-            tableBody.innerHTML = "";
-
-            if (data.length > 0) {
-                data.forEach(row => {
-                    const newRow = tableBody.insertRow();
-                    newRow.innerHTML = `
-                        <td class="border p-2">${row.register}</td>
-                        <td class="border p-2">${row.RegSAP}</td>
-                        <td class="border p-2">${row.sts}</td>
-                        <td class="border p-2">${row.Nama}</td>
-                        <td class="border p-2">${row.NAMA_JAB}</td>
-                    `;
-                });
-            } else {
-                tableBody.innerHTML = `
-                    <tr class="bg-red-100 text-red-600">
-                        <td class="border p-2 text-center" colspan="5">Tidak ada data ditemukan.</td>
-                    </tr>
-                `;
+        }
+    
+        // Event tombol "Cari" -> Load data tabel dan dropdown Tambah Karyawan
+        $('#cari').click(function() {
+            loadKaryawan();
+            
+            let regMandor = $('#reg_mandor').val();
+            if (!regMandor) {
+                alert("Pilih mandor terlebih dahulu!");
+                return;
             }
-        } catch (error) {
-            console.error("Error:", error);
+    
+            $.get(`/referensi/get-karyawan-tanpa-mandor/${regMandor}`, function(data) {
+    let select = $('#new-karyawan');
+    select.empty().append('<option value="">Pilih Karyawan</option>');
+
+    // Gunakan Set untuk menghindari data duplikat berdasarkan Register
+    let uniqueKaryawan = new Set();
+    data.forEach(karyawan => {
+        let formattedText = `(${karyawan.Register}) ${karyawan.Nama} - ${karyawan.sts}`; // Tambahkan status
+        if (!uniqueKaryawan.has(formattedText)) {
+            uniqueKaryawan.add(formattedText);
+            select.append(`<option value="${karyawan.Register}">${formattedText}</option>`);
         }
     });
-});
-</script>
+                // Refresh Select2 setelah update data
+                select.trigger('change');
+            }).fail(function(xhr) {
+                console.error("Gagal mengambil data karyawan tanpa mandor:", xhr.responseText);
+            });
+        });
+    
+        // Event tombol "Tambah Karyawan"
+        $('#tambah-karyawan').click(function() {
+            let register = $('#new-karyawan').val();
+            let regMandor = $('#reg_mandor').val();
+            let tanggal = $('#bulan').val();
+            let kdAfd = $('#kd_afd').val();
+    
+            if (!register || !regMandor || !tanggal || !kdAfd) {
+                alert('Pastikan semua data sudah dipilih!');
+                return;
+            }
+    
+            $.ajax({
+                url: '/referensi/tambah-karyawan',
+                type: 'POST',
+                data: {
+                    tanggal: tanggal,
+                    kd_afd: kdAfd,
+                    reg_mandor: regMandor,
+                    register: register,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    alert(response.success);
+                    loadKaryawan();
+                },
+                error: function(xhr) {
+                    console.error("Gagal menambah karyawan:", xhr.responseText);
+                }
+            });
+        });
+    
+        // Event tombol "Hapus Karyawan"
+        $(document).on('click', '.hapus-karyawan', function() {
+            let register = $(this).data('id');
+    
+            if (confirm('Apakah Anda yakin ingin menghapus karyawan ini?')) {
+                $.ajax({
+                    url: '/referensi/hapus-karyawan',
+                    type: 'POST',
+                    data: {
+                        register: register,
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        alert(response.success);
+                        loadKaryawan();
+                    },
+                    error: function(xhr) {
+                        console.error("Gagal menghapus karyawan:", xhr.responseText);
+                    }
+                });
+            }
+        });
+    });
+    
+    </script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+
+</body>
+</html>

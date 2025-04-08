@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlsrv'),
+    'default' => env('DB_CONNECTION', 'AMCO'),
 
     /*
     |--------------------------------------------------------------------------
@@ -107,19 +107,21 @@ return [
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
+            'trust_server_certificate' => true, 
         ],
 
         'AMCO' => [
-            'driver' => 'sqlsrv',
-            'host' => env('DB_AMCO_HOST', 'localhost'),
-            'port' => env('DB_AMCO_PORT', '1433'),
-            'database' => env('DB_AMCO_DATABASE', 'AMCO'),
-            'username' => env('DB_AMCO_USERNAME', 'sa'),
-            'password' => env('DB_AMCO_PASSWORD', 'upi123'),
-            'charset' => 'utf8',
-            'prefix' => '',
-            'prefix_indexes' => true,
-        ],
+    'driver' => 'sqlsrv',
+    'host' => env('DB_AMCO_HOST', 'localhost'),
+    'port' => env('DB_AMCO_PORT', '1433'),
+    'database' => env('DB_AMCO_DATABASE', 'AMCO'),
+    'username' => env('DB_AMCO_USERNAME', 'sa'),
+    'password' => env('DB_AMCO_PASSWORD', 'upi123'),
+    'charset' => 'utf8',
+    'prefix' => '',
+    'prefix_indexes' => true,
+    'trust_server_certificate' => true,  // Tambahkan ini!
+],
     ],
 
 
