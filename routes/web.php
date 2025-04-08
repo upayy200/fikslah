@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\TehRijekController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MandorPanenController;
 use App\Http\Controllers\MandorKaryawanController;
@@ -69,3 +70,9 @@ Route::get('/referensi/get-karyawan-tanpa-mandor/{id}', [MandorKaryawanControlle
 Route::get('/test', function () {
     return view('tes');
 });
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/referensi/teh-rijek/load', [TehRijekController::class, 'load']);
+    Route::post('/referensi/teh-rijek/update', [TehRijekController::class, 'update']);
+});
+Route::get('/referensi/teh-rijek', [TehRijekController::class, 'index'])->name('teh.rijek.index');

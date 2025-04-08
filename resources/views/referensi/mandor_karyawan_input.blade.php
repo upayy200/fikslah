@@ -179,7 +179,7 @@
                         <td>${index + 1}</td>
                         <td>${row.Register}</td>
                         <td>${row.RegSAP}</td>
-                        <td>${row.sts}</td>
+                        <td>${row.sts ?? '-'}</td>
                         <td>${row.Nama}</td>
                         <td>${row.NAMA_JAB}</td>
                         <td><button class="hapus-karyawan" data-id="${row.Register}">Hapus</button></td>
@@ -203,20 +203,23 @@
     let select = $('#new-karyawan');
     select.empty().append('<option value="">Pilih Karyawan</option>');
 
-    // Gunakan Set untuk menghindari data duplikat berdasarkan Register
     let uniqueKaryawan = new Set();
     data.forEach(karyawan => {
-        let formattedText = `(${karyawan.Register}) ${karyawan.Nama} - ${karyawan.sts}`; // Tambahkan status
+        let jabatan = karyawan.NAMA_JAB ?? '-';
+        let formattedText = `(${karyawan.Register}) ${karyawan.Nama} - ${jabatan}`;
         if (!uniqueKaryawan.has(formattedText)) {
             uniqueKaryawan.add(formattedText);
             select.append(`<option value="${karyawan.Register}">${formattedText}</option>`);
         }
     });
-                // Refresh Select2 setelah update data
-                select.trigger('change');
-            }).fail(function(xhr) {
-                console.error("Gagal mengambil data karyawan tanpa mandor:", xhr.responseText);
-            });
+
+    select.trigger('change');
+
+}) // <== penutup callback function
+.fail(function(xhr) {
+    console.error("Gagal mengambil data karyawan tanpa mandor:", xhr.responseText);
+});
+
         });
     
         // Event tombol "Tambah Karyawan"
@@ -269,6 +272,7 @@
                     },
                     error: function(xhr) {
                         console.error("Gagal menghapus karyawan:", xhr.responseText);
+                        
                     }
                 });
             }
@@ -280,3 +284,4 @@
 
 </body>
 </html>
+

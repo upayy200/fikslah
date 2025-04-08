@@ -227,14 +227,27 @@ public function hapusKaryawan(Request $request)
 }
 public function getKaryawanTanpaMandor($Regmdr)
 {
-    $karyawan = DB::connection('AMCO')->table('AMCO_MandorKaryawan')
-        ->where('Regmdr', '!=', $Regmdr)
-        ->orWhereNull('Regmdr')
+    $karyawan = DB::connection('AMCO')->table('AMCO_MandorKaryawan as mk')
+        ->leftJoin('AMCO_Dik as dik', 'mk.RegSAP', '=', 'dik.REG_SAP')
+        ->where(function ($query) use ($Regmdr) {
+            $query->whereNull('mk.Regmdr')
+                  ->orWhere('mk.Regmdr', '!=', $Regmdr);
+        })
+        ->select(
+            'mk.Register', 
+            'mk.RegSAP', 
+            'mk.sts', 
+            'mk.Nama', 
+            'dik.NAMA_JAB'
+        )
+        ->distinct()
         ->get();
 
     return response()->json($karyawan);
 }
 
+
 }
+
 
 

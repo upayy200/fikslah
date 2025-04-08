@@ -12,6 +12,7 @@ class User extends Authenticatable
     use Notifiable;
 
     protected $fillable = ['username', 'password'];
+    protected $connection = 'AMCO';
 
     public function findForPassport($username)
     {

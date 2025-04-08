@@ -122,6 +122,18 @@ return [
     'prefix_indexes' => true,
     'trust_server_certificate' => true,  // Tambahkan ini!
 ],
+'checkroll' => [
+    'driver' => 'sqlsrv',
+    'host' => env('DB_CHECKROLL_HOST', 'localhost'),
+    'database' => env('DB_CHECKROLL_DATABASE', 'checkroll'),
+    'username' => env('DB_CHECKROLL_USERNAME', 'sa'),
+    'password' => env('DB_CHECKROLL_PASSWORD', ''),
+    'charset' => 'utf8',
+    'prefix' => '',
+    'prefix_indexes' => true,
+    'trust_server_certificate' => true,  
+],
+
     ],
 
 

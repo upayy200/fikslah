@@ -45,7 +45,7 @@
                                     TEH
                                 </a>
                                 <ul class="dropdown-menu" aria-labelledby="tehDropdown">
-                                    <li><a class="dropdown-item" href="#">Teh Rijek (Rijek & Alokasi)</a></li>
+                                    <li><a class="dropdown-item" href="/referensi/teh-rijek">Teh Rijek (Rijek & Alokasi)</a></li>
                                     <li><a class="dropdown-item" href="#">Ref Kode Branded</a></li>
                                     <li><a class="dropdown-item" href="#">Ref Karyawan PJTK</a></li>
                                 </ul>
@@ -340,6 +340,8 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     @stack('scripts')
 </body>

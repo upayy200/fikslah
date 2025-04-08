@@ -60,9 +60,10 @@ class AuthController extends Controller
             return back()->withErrors(['username' => 'Username tidak terdaftar.']);
         }
 
-        if (Hash::Check($password, $data->password)) {
+        if (Auth::attempt(['username' => $username, 'password' => $password])) {
             return redirect()->route('pilih.kebun');
         }
+        
 
         return back()->withErrors(['username' => 'Password salah.']);
     }
