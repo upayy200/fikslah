@@ -6,6 +6,7 @@ use App\Http\Controllers\TehRijekController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MandorPanenController;
 use App\Http\Controllers\MandorKaryawanController;
+use App\Http\Controllers\RefKodeBrandedController;
 
 // Redirect halaman utama ke login
 Route::get('/', function () {
@@ -77,3 +78,8 @@ Route::get('/test', function () {
     Route::post('/referensi/teh-rijek/update', [TehRijekController::class, 'update']);
 
 Route::get('/referensi/teh-rijek', [TehRijekController::class, 'index'])->name('teh.rijek.index');
+
+Route::get('/referensi/ref-kode-branded', [RefKodeBrandedController::class, 'index']);
+Route::get('/referensi/ref-kode-branded/kd-afd', [RefKodeBrandedController::class, 'getKDAfd']);
+Route::get('/referensi/ref-kode-branded/data', [RefKodeBrandedController::class, 'getData']);
+Route::post('/referensi/ref-kode-branded/update', [RefKodeBrandedController::class, 'update'])->name('ref-kode-branded.update');

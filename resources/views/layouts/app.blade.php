@@ -48,7 +48,7 @@
                                 </a>
                                 <ul class="dropdown-menu" aria-labelledby="tehDropdown">
                                     <li><a class="dropdown-item" href="/referensi/teh-rijek">Teh Rijek (Rijek & Alokasi)</a></li>
-                                    <li><a class="dropdown-item" href="#">Ref Kode Branded</a></li>
+                                    <li><a class="dropdown-item" href="/referensi/ref-kode-branded">Ref Kode Branded</a></li>
                                     <li><a class="dropdown-item" href="#">Ref Karyawan PJTK</a></li>
                                 </ul>
                             </li>

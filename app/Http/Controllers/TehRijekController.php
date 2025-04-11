@@ -8,9 +8,20 @@ use Illuminate\Support\Facades\DB;
 class TehRijekController extends Controller
 {
     public function index()
-    {
-        return view('referensi.teh_rijek');
+{
+    $kebun_id = session('selected_kebun');
+
+    if (!$kebun_id) {
+        return redirect()->route('pilih.kebun')->withErrors('Silakan pilih kebun terlebih dahulu.');
     }
+
+    $kebun = DB::connection('MASTERREF')->table('Ref_Kebun')
+        ->where('KodeKebun', $kebun_id)
+        ->first();
+
+    return view('referensi.teh_rijek', compact('kebun'));
+}
+
 
     public function load(Request $request)
     {

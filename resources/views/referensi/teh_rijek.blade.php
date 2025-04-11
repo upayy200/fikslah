@@ -5,6 +5,12 @@
     <h2 class="mb-4">Teh Rijek & Alokasi</h2>
 
     <div class="mb-3">
+        @if(isset($kebun))
+    <p class="text-sm text-gray-700 mb-2">
+        <span class="font-semibold">Kebun:</span> {{ $kebun->NamaKebun }} ({{ $kebun->KodeKebun }})
+    </p>
+@endif
+
         <label for="tanggal">Tanggal:</label>
         <input type="date" id="tanggal" class="form-control" value="{{ now()->format('Y-m-d') }}">
     </div>
