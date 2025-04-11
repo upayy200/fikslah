@@ -14,6 +14,7 @@ Route::get('/', function () {
 
 // Rute untuk login dan logout
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
@@ -22,7 +23,8 @@ Route::get('/pilih-kebun', [AuthController::class, 'showKebunSelection'])->name(
 Route::post('/pilih-kebun', [AuthController::class, 'selectKebun']);
 
 // Dashboard
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+// Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+Route::get('/dashboard', [AuthController::class, 'showDashboard'])->name('dashboard');
 Route::get('/dashboard/{kebun_id}', [DashboardController::class, 'show'])->name('dashboard.show');
 
 // Group rute untuk Mandor Panen
@@ -71,8 +73,7 @@ Route::get('/test', function () {
     return view('tes');
 });
 
-Route::middleware(['auth'])->group(function () {
     Route::get('/referensi/teh-rijek/load', [TehRijekController::class, 'load']);
     Route::post('/referensi/teh-rijek/update', [TehRijekController::class, 'update']);
-});
+
 Route::get('/referensi/teh-rijek', [TehRijekController::class, 'index'])->name('teh.rijek.index');

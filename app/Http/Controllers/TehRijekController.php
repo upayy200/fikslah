@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -9,43 +10,65 @@ class TehRijekController extends Controller
     public function index()
     {
         return view('referensi.teh_rijek');
-
     }
 
     public function load(Request $request)
-{
-    $tanggal = $request->input('tanggal');
-
-    // Cek apakah user login, jika tidak beri fallback default atau error aman
-    $user = auth()->user();
-    if (!$user) {
-        return response()->json(['message' => 'Unauthorized'], 401);
+    {
+        $tanggal = $request->input('tanggal');
+        $kodeKebun = session('selected_kebun');
+    
+        if (!$kodeKebun) {
+            return response()->json(['data' => [], 'error' => 'Kebun belum dipilih'], 400);
+        }
+    
+        // Ambil data branded dari MASTERREF sesuai kebun
+        $branded = DB::connection('checkroll')
+            ->table(DB::raw('[MASTERREF].[dbo].[Ref_Branded]'))
+            ->where('kodeunit', $kodeKebun)
+            ->get();
+    
+        // Ambil data rijek sesuai tanggal
+        $dataRijek = DB::connection('checkroll')->table('GajiRijek_2025')
+            ->where('Tanggal', $tanggal)
+            ->get()
+            ->keyBy('Kdbrand');
+    
+        // Gabungkan data
+        $result = $branded->map(function ($item) use ($dataRijek) {
+            $rijek = $dataRijek[$item->kdbranded] ?? null;
+    
+            return [
+                'KodeBranded' => $item->kdbranded,
+                'NamaBranded' => $item->nmbranded,
+                'Rijek'       => $rijek->Rijek ?? 0,
+                'NomorBA'     => $rijek->No_BA ?? '',
+            ];
+        });
+    
+        return response()->json(['data' => $result]);
     }
+    
+    
 
-    $kodeunit = $user->kode_kebun;
-
-    $data = DB::connection('checkroll') // Ganti sesuai nama baru database
-        ->table('GajiRijek_2025 as g')
-        ->join('MASTERREF.dbo.Ref_Branded as r', 'g.Kdbrand', '=', 'r.kdbranded')
-        ->select('g.Kdbrand', 'r.nmbranded', 'g.Rijek', 'g.No_BA')
-        ->whereDate('g.Tanggal', $tanggal)
-        ->where('g.Kodeunit', $kodeunit)
-        ->get();
-
-    return response()->json($data);
-}
 
     public function update(Request $request)
     {
-        $kodeunit = auth()->user()->kode_kebun;
+        $tanggal = $request->input('tanggal');
+        $data = $request->input('data');
 
-        DB::connection('checkroll')
-            ->table('GajiRijek_2025')
-            ->where('Kdbrand', $request->Kdbrand)
-            ->where('Tanggal', $request->Tanggal)
-            ->where('Kodeunit', $kodeunit)
-            ->update(['Rijek' => $request->Rijek]);
+        foreach ($data as $item) {
+            DB::connection('checkroll')->table('GajiRijek_2025')->updateOrInsert(
+                [
+                    'Tanggal' => $tanggal,
+                'Kdbrand' => $item['KodeBranded'],
+                ],
+                [
+                    'Rijek' => $item['Rijek'],
+                'No_BA' => $item['NomorBA'],
+                ]
+            );
+        }
 
-        return response()->json(['success' => 'Data berhasil diperbarui']);
+        return response()->json(['status' => 'success', 'message' => 'Data berhasil disimpan']);
     }
 }
