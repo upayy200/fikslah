@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TehRijekController;
+use App\Http\Controllers\CheckrollController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MandorPanenController;
 use App\Http\Controllers\MandorKaryawanController;
@@ -83,3 +84,12 @@ Route::get('/referensi/ref-kode-branded', [RefKodeBrandedController::class, 'ind
 Route::get('/referensi/ref-kode-branded/kd-afd', [RefKodeBrandedController::class, 'getKDAfd']);
 Route::get('/referensi/ref-kode-branded/data', [RefKodeBrandedController::class, 'getData']);
 Route::post('/referensi/ref-kode-branded/update', [RefKodeBrandedController::class, 'update'])->name('ref-kode-branded.update');
+
+
+Route::get('checkroll/komoditi_teh', [CheckrollController::class, 'komoditiTeh']);
+Route::post('checkroll/get-mandor-by-afd', [CheckrollController::class, 'getMandorByAfd']);
+Route::post('checkroll/get-karyawan-by-mandor', [CheckrollController::class, 'getKaryawanByMandor']);
+Route::post('checkroll/simpan-absensi', [CheckrollController::class, 'simpanAbsensi'])
+     ->name('checkroll.simpan-absensi');
+     Route::get('/checkroll/komoditi_teh/target_alokasi', [CheckrollController::class, "get_target_alokasi"]);
+

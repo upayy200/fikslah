@@ -120,7 +120,7 @@
                                     Absensi Pestasi Kerja Kemandoran   
                                 </a>
                                 <ul class="dropdown-menu" aria-labelledby="tehDropdown">
-                                    <li><a class="dropdown-item" href="#">Komoditi Teh</a></li>
+                                    <li><a class="dropdown-item" href="/checkroll/komoditi_teh">Komoditi Teh</a></li>
                                     <li><a class="dropdown-item" href="#">Komoditi Karet</a></li>
                                 </ul>
                             </li>
