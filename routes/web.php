@@ -92,4 +92,5 @@ Route::post('checkroll/get-karyawan-by-mandor', [CheckrollController::class, 'ge
 Route::post('checkroll/simpan-absensi', [CheckrollController::class, 'simpanAbsensi'])
      ->name('checkroll.simpan-absensi');
      Route::get('/checkroll/komoditi_teh/target_alokasi', [CheckrollController::class, "get_target_alokasi"]);
-
+     Route::get('/checkroll/get-costcenter', [CheckrollController::class, 'getCostCenter'])->name('checkroll.get-costcenter');
+     Route::get('/checkroll/get-bloksap', [CheckrollController::class, 'getBlokSAP'])->name('checkroll.get-bloksap');

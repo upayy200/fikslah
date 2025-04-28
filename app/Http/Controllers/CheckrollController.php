@@ -10,26 +10,88 @@ use Illuminate\Support\Facades\Log;
 
 class CheckrollController extends Controller
 {
-    public function komoditiTeh()
-    {
-        $selectedKebun = session('selected_kebun');
+    public function komoditiTeh(Request $request)
+{
+    $selectedKebun = session('selected_kebun');
 
-        $afdBagian = DB::connection('AMCO')
-            ->table('AMCO_Afdeling')
-            ->select('KodeAfdeling', 'NamaAfdeling')
-            ->where('KodeKebun', $selectedKebun)
+    // Pastikan selalu return array, bahkan ketika kosong
+    $afdBagian = DB::connection('AMCO')
+        ->table('AMCO_Afdeling')
+        ->select('KodeAfdeling', 'NamaAfdeling')
+        ->where('KodeKebun', $selectedKebun)
+        ->get() ?? [];
+
+    // Inisialisasi dengan array kosong
+    $karyawan = [];
+    $absen = [];
+    $target_alokasi = [];
+
+    if ($request->has(['reg', 'kd'])) {
+        $reg = $request->input('reg');
+        $kd = str_replace('AFD', '', $request->input('kd'));
+
+        $dataExists = DB::connection("checkroll")
+            ->table("GajiAbsensi")
+            ->where("regmdr", $reg)
+            ->where("kodeafd", $kd)
+            ->exists();
+
+        if ($dataExists) {
+            $karyawan = DB::connection('AMCO')
+                ->table('AMCO_MandorKaryawan as mk')
+                ->join('AMCO_Dik as d', 'mk.Register', '=', 'd.REG')
+                ->where('mk.regmdr', $reg)
+                ->where('mk.KodeAfdeling', $request->kd)
+                ->select([
+                    'd.REG',
+                    'd.REG_SAP',
+                    'd.NAMA',
+                    'd.NAMA_JAB',
+                    'd.KD_AFD',
+                    
+                ])
+                ->distinct()
+                ->get() ?? [];
+
+            $absen = DB::Connection("AMCO")
+                ->table("AMCO_KodeAbsen")
+                ->get() ?? [];
+
+            $target_alokasi = DB::connection('AMCO')
+            ->table('AMCO_TargetAlokasiBiaya')
+            ->select('TargetAlokasi', 'Uraian')
             ->get();
 
-        return view('checkroll.komoditi_teh', compact('afdBagian'));
+            if ($target_alokasi->isEmpty()) {
+                logger()->error('Data Target Alokasi kosong');
+            } else {
+                logger()->info('Data Target Alokasi:', $target_alokasi->toArray());
+            }
+        
+            session()->put([
+                'target_alokasi' => $target_alokasi,
+                'absen' => $absen,
+                'karyawan' => $karyawan,
+                'reg' => $reg,
+                'kd' => $kd
+            ]);
+        }
     }
 
-    public function get_target_alokasi()
-    {
-        $data = DB::TABLE("AMCO_TargetAlokasiBiaya")->get();
+    return view('checkroll.komoditi_teh', [
+        'afdBagian' => $afdBagian,
+        'karyawan' => $karyawan,
+        'absen' => $absen,
+        'target_alokasi' => $target_alokasi,
+        'error' => session('error'),
+        'success' => session('success')
+    ]);
+}
 
-        return response()->json(['data' => $data]);
-    }
 
+
+    
+    
     public function getMandorByAfd(Request $request)
     {
         $kdAfd = $request->kd_afd;
@@ -112,8 +174,13 @@ class CheckrollController extends Controller
             'tanggal' => 'required|date_format:d-m-Y',
             'kd_afd' => 'required',
             'reg_mandor' => 'required',
-            'data' => 'required|array'
+            'data' => 'required|min:1'
         ]);
+
+        $dataKaryawan = json_decode($request->data, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \Exception('Format data karyawan tidak valid');
+        }
 
         $tanggal = Carbon::createFromFormat('d-m-Y', $request->tanggal)->format('Y-m-d');
         $kodeafd = str_replace('AFD', '', $request->kd_afd);
@@ -122,10 +189,11 @@ class CheckrollController extends Controller
         $savedCount = 0;
         $errors = [];
 
-        foreach ($request->data as $item) {
-            if (empty($item['absen'])) continue;
-
+        foreach ($dataKaryawan as $item) {
             try {
+                // Skip jika tidak ada absen (karena ini field utama)
+                if (empty($item['absen'])) continue;
+
                 $karyawan = DB::connection('AMCO')
                     ->table('AMCO_Dik as d')
                     ->join('AMCO_MandorKaryawan as mk', 'd.REG', '=', 'mk.Register')
@@ -133,12 +201,13 @@ class CheckrollController extends Controller
                     ->first();
 
                 if (!$karyawan) {
-                    $errors[] = "Data karyawan tidak ditemukan: {$item['reg']}";
+                    $errors[] = "Karyawan dengan REG {$item['reg']} tidak ditemukan";
                     continue;
                 }
 
                 $dataToSave = [
                     'tanggal' => $tanggal,
+                    'SAP_TargetAlokasi' => $item['SAP_TargetAlokasi'] ?? null,
                     'kodeunit' => $karyawan->KD_KBN ?? $kodeunit,
                     'kodeafd' => $karyawan->KD_AFD ?? $kodeafd,
                     'regmdr' => $karyawan->regmdr ?? $request->reg_mandor,
@@ -148,26 +217,40 @@ class CheckrollController extends Controller
                     'TglInput' => now(),
                 ];
 
-                // Cek existing data
+                // Tambahkan field opsional hanya jika ada nilai
+                $optionalFields = [
+                    'target_alokasi', 'kdblok', 'thntnm', 'jelajahHA', 'satuan',
+                    'hslpanen', 'jmlkg', 'stpikul', 'pct', 'ms', 'jendangan'
+                ];
+
+                foreach ($optionalFields as $field) {
+                    if (isset($item[$field]) && $item[$field] !== '') {
+                        $dataToSave[$field] = $item[$field];
+                    }
+                }
+
+                // Cek apakah data sudah ada
                 $existing = DB::connection('checkroll')
                     ->table('GajiAbsensi')
                     ->where('tanggal', $tanggal)
-                    ->where('register', $item['reg'])
+                    ->where('register', $karyawan->REG)
                     ->first();
 
                 if ($existing) {
+                    // Update hanya jika ada perubahan
                     DB::connection('checkroll')
                         ->table('GajiAbsensi')
                         ->where('register', $existing->register)
+                        ->where('tanggal', $tanggal)
                         ->update($dataToSave);
                 } else {
+                    // Insert baru
                     DB::connection('checkroll')
                         ->table('GajiAbsensi')
                         ->insert($dataToSave);
                 }
 
                 $savedCount++;
-
             } catch (\Exception $e) {
                 $errors[] = "Gagal simpan data {$item['reg']}: " . $e->getMessage();
                 Log::error("Gagal simpan absen {$item['reg']}: " . $e->getMessage());
@@ -176,14 +259,9 @@ class CheckrollController extends Controller
 
         DB::connection('checkroll')->commit();
 
-        $message = "Data berhasil disimpan ($savedCount record)";
-        if (!empty($errors)) {
-            $message .= " | Error: " . implode(', ', $errors);
-        }
-
         return response()->json([
             'success' => $savedCount > 0,
-            'message' => $message,
+            'message' => "Data berhasil disimpan ($savedCount record)" . (!empty($errors) ? " | Error: " . implode(', ', $errors) : ''),
             'errors' => $errors
         ]);
 
@@ -197,5 +275,42 @@ class CheckrollController extends Controller
     }
 }
 
+public function getCostCenter()
+{
+    $selectedKebun = session('selected_kebun');
+    
+    if (!$selectedKebun) {
+        return response()->json(['error' => 'Kebun tidak terdeteksi'], 400);
+    }
 
+    try {
+        $costCenters = DB::connection('AMCO')
+            ->table('AMCO_CostCenter')
+            ->select('CostCenter', 'Uraian')
+            ->where('KodeUnit', $selectedKebun)
+            ->where('stat', '1')
+            ->orderBy('CostCenter')
+            ->get();
+
+        return response()->json($costCenters);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'Gagal mengambil data Cost Center',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
+public function getBlokSAP(Request $request)
+{
+    $selectedKebun = session('selected_kebun');
+    
+    return DB::connection('AMCO')
+        ->table('AMCO_BlokSAP')
+        ->select('Blok_SAP', 'NamaBlok', 'Uraian', 'ThnTnm')
+        ->where('KodeUnit', $selectedKebun)
+        ->where('KomoditiCode', 'TH') // Hanya untuk komoditi Teh
+        ->orderBy('NamaBlok')
+        ->get();
+}
 }
