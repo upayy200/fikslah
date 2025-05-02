@@ -313,4 +313,18 @@ public function getBlokSAP(Request $request)
         ->orderBy('NamaBlok')
         ->get();
 }
+
+public function getAktifitasTH()
+{
+    $data = DB::table('AMCO.dbo.AMCO_Aktifitas')
+        ->where('KomoditiCode', 'TH')
+        ->select('Aktifitas', 'Uraian')
+        ->where('stat', 1)
+        ->orderBy('Aktifitas')
+        ->get();
+
+    return response()->json($data);
+}
+
+
 }
