@@ -95,3 +95,4 @@ Route::post('checkroll/simpan-absensi', [CheckrollController::class, 'simpanAbse
      Route::get('/checkroll/get-costcenter', [CheckrollController::class, 'getCostCenter'])->name('checkroll.get-costcenter');
      Route::get('/checkroll/get-bloksap', [CheckrollController::class, 'getBlokSAP'])->name('checkroll.get-bloksap');
      Route::get('/checkroll/get-aktifitas-th', [CheckrollController::class, 'getAktifitasTH']);
+     Route::get('/checkroll/get-mesin-petik', [CheckrollController::class, 'getMesinPetik'])->name('get.mesin.petik');

@@ -305,15 +305,23 @@ public function getBlokSAP(Request $request)
 {
     $selectedKebun = session('selected_kebun');
     
-    return DB::connection('AMCO')
+    $bloks = DB::connection('AMCO')
         ->table('AMCO_BlokSAP')
-        ->select('Blok_SAP', 'NamaBlok', 'Uraian', 'ThnTnm')
+        ->select('Blok_SAP','NamaBlok', 'Uraian', 'ThnTnm')
         ->where('KodeUnit', $selectedKebun)
-        ->where('KomoditiCode', 'TH') // Hanya untuk komoditi Teh
-        ->orderBy('NamaBlok')
+        ->where('KomoditiCode', 'TH')
+        ->orderBy('Blok_SAP')
         ->get();
-}
 
+    return $bloks->map(function($item) {
+        return [
+            'Blok_SAP' => $item->Blok_SAP,
+            'NamaBlok'=>$item->NamaBlok,
+            'Uraian' => $item->Uraian,
+            'ThnTnm' => $item->ThnTnm
+        ];
+    });
+}
 public function getAktifitasTH()
 {
     $data = DB::table('AMCO.dbo.AMCO_Aktifitas')
@@ -326,5 +334,35 @@ public function getAktifitasTH()
     return response()->json($data);
 }
 
+public function getMesinPetik(Request $request)
+{
+    $selectedKebun = session('selected_kebun');
+    $kodeAfd = $request->input('kode_afd');
 
+    \Log::info('Mengambil mesin petik', [
+        'kode_unit' => $selectedKebun,
+        'kode_afd' => $kodeAfd
+    ]);
+
+    try {
+        $mesinPetik = DB::connection('MASTERREF')
+            ->table('Ref_MesinPetik')
+            ->select('Dataran', 'KodeMesin', 'NamaAfd')
+            ->where('KodeUnit', $selectedKebun)
+            ->where('Kodeafd', $kodeAfd)
+            ->orderBy('KodeMesin')
+            ->get();
+
+        \Log::info('Data ditemukan:', $mesinPetik->toArray());
+
+        return response()->json($mesinPetik);
+
+    } catch (\Exception $e) {
+        \Log::error('Error:', ['message' => $e->getMessage()]);
+        return response()->json([
+            'error' => 'Gagal mengambil data',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
 }
