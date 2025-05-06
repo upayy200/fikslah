@@ -4,26 +4,29 @@
   <h4>Absensi Komoditi Teh</h4>
   <form id="form-komoditi-teh"> @csrf @include('layouts.alert') {{-- Tanggal --}}
     <div class="form-group mb-3">
-      <label for="tanggal">Tanggal</label>
-      <input type="text" class="form-control" name="tanggal" id="tanggal" value="{{ \Carbon\Carbon::now()->format('d-m-Y') }}" readonly>
+        <label for="tanggal">Tanggal</label>
+        <input type="text" class="form-control datepicker" name="tanggal" id="tanggal" autocomplete="off">
     </div>
     {{-- Dropdown Afdeling/Bagian --}}
     <div class="form-group mb-3">
-      <label for="kd_afd">Afdeling/Bagian</label>
-      <select name="kd_afd" id="kd_afd" class="form-control select2-afdeling">
-        <option value="">-- Pilih Afdeling/Bagian --</option> @foreach ($afdBagian as $item) <option value="{{ $item->KodeAfdeling }}">{{ $item->KodeAfdeling }} - {{ $item->NamaAfdeling }}
-        </option> @endforeach
-      </select>
+        <label for="kd_afd">Afdeling/Bagian</label>
+        <select name="kd_afd" id="kd_afd" class="form-control select2-afdeling">
+            <option value="">-- Pilih Afdeling/Bagian --</option>
+            @foreach ($afdBagian as $item)
+            <option value="{{ $item->KodeAfdeling }}">{{ $item->KodeAfdeling }} - {{ $item->NamaAfdeling }}</option>
+            @endforeach
+        </select>
     </div>
-    {{-- Dropdown Mandor --}}
+    
     <div class="form-group mb-4">
-      <label for="reg_mandor">Reg. Mandor</label>
-      <select name="reg_mandor" id="reg_mandor" class="form-control select2-mandor">
-        <option value="">-- Pilih Mandor --</option>
-      </select>
+        <label for="reg_mandor">Reg. Mandor</label>
+        <select name="reg_mandor" id="reg_mandor" class="form-control select2-mandor">
+            <option value="">-- Pilih Mandor --</option>
+        </select>
     </div>
+    
     <div class="d-flex justify-content-end">
-      <a href="javascript:;" onclick="test()" class="btn btn-primary">READ</a>
+        <a href="#" class="btn btn-primary" id="btn-read">READ</a>
     </div>
     {{-- Tabel Detail Karyawan --}} @php $karyawan = session()->get('karyawan'); $absen = session()->get('absen'); $target_alokasi = session()->get('target_alokasi'); @endphp @if(isset($karyawan) && count($karyawan) > 0) <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
       <table class="table table-bordered table-striped" id="tabel-karyawan">
@@ -34,7 +37,7 @@
             <th style="min-width: 100px;">Reg.SAP</th>
             <th style="min-width: 120px;">Nama</th>
             <th style="min-width: 200px;">Jabatan</th>
-            <th style="min-width: 80px;">Afd1</th>
+            <th style="min-width: 80px;">Afdeling</th>
             <th style="min-width: 100px;">Kode Absen</th> {{-- AMCO_KodeAbsen --}}
             <th style="min-width: 180px;">Target Alokasi</th>
             <th style="min-width: 120px;">Location Code/CC</th> {{--FF AMCO_BlokSAP --}} {{--CC AMCO_CostCenter --}}
@@ -63,8 +66,8 @@
                 <select name="data[{{ $index }}][absen]" class="form-control absen-select" onchange="handleAbsenChange(this)">
                   <option value="">Pilih</option>
                   @foreach ($absen as $item2)
-                  <option value="{{ $item2->KodeAbsen }}" @selected(old('data.'.$index.'.absen')==$item2->KodeAbsen)>
-                    {{ $item2->Uraian }}
+                    <option value="{{ $item2->KodeAbsen }}" @selected(old('data.'.$index.'.absen')==$item2->KodeAbsen)>
+                                    {{ $item2->KodeAbsen }} - {{ $item2->Uraian }} 
                   </option>
                   @endforeach
                 </select>
@@ -239,14 +242,61 @@
                 min-width: 150px !important;
             }
         }
+
+        /* Untuk styling datepicker agar lebih konsisten */
+        input[type="date"] {
+    -webkit-appearance: none;
+    padding: 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
     </style>
 @endpush
 
 @push('scripts')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.id.min.js"></script>
 <script>
+
+$(document).ready(function() {
+    // Inisialisasi datepicker (sebaiknya di luar event click)
+    $('.datepicker').datepicker({
+        format: 'dd-mm-yyyy',
+        autoclose: true,
+        todayHighlight: true,
+        language: 'id'
+    });
+    
+    // Set tanggal default jika kosong
+    if (!$('#tanggal').val()) {
+        const today = new Date();
+        const day = String(today.getDate()).padStart(2, '0');
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const year = today.getFullYear();
+        $('#tanggal').val(`${day}-${month}-${year}`);
+    }
+
+    // Handler tombol READ
+    $('#btn-read').on('click', function(e) {
+        e.preventDefault();
+        
+        const kd_afd = $('#kd_afd').val();
+        const reg_mandor = $('#reg_mandor').val();
+        const tanggal = $('#tanggal').val(); // Ambil nilai tanggal
+        
+        if (!kd_afd || !reg_mandor) {
+            alert('Silakan pilih Afdeling dan Mandor terlebih dahulu');
+            return;
+        }
+        
+        // Redirect dengan parameter tambahan tanggal
+        window.location.href = `/checkroll/komoditi_teh?kd=${encodeURIComponent(kd_afd)}&reg=${encodeURIComponent(reg_mandor)}&tgl=${encodeURIComponent(tanggal)}`;
+    });
+});
+
     function handleAbsenChange(selectElement) {
         const row = $(selectElement).closest('tr');
         const absenValue = $(selectElement).val();
@@ -352,40 +402,58 @@
 
     // Kumpulkan data karyawan
     var karyawanData = [];
-    $('#tabel-karyawan tbody tr').each(function(index) {
-        var row = $(this);
-        const reg = row.find('td:eq(1)').text().trim();
-        const absen = row.find('select[name*="[absen]"]').val();
-        const SAP_TargetAlokasi = row.find('select[name*="[target_alokasi]"]').val();
-        const kdblok = row.find('input[name*="[kdblok]"]').val();
-        const thntnm = row.find('input[name*="[thntnm]"]').val();
-        const jelajahHA = row.find('input[name*="[jelajahHA]"]').val();
-        const satuan = row.find('input[name*="[satuan]"]').val();
-        const hslpanen = row.find('input[name*="[hslpanen]"]').val();
-        const jmlkg = row.find('input[name*="[jmlkg]"]').val();
-        const stpikul = row.find('input[name*="[stpikul]"]').val();
-        const pct = row.find('input[name*="[pct]"]').val();
-        const ms = row.find('input[name*="[ms]"]').val();
-        const jendangan = row.find('select[name*="[jendangan]"]').val(); // Ubah dari input ke select
+    $('#form-absensi').submit(function(e) {
+    e.preventDefault();
+    const formData = $(this).serializeArray();
+    const karyawanData = [];
 
-        if (absen || SAP_TargetAlokasi || kdblok || thntnm || jelajahHA || satuan || hslpanen || jmlkg || stpikul || pct || ms || jendangan) {
-            karyawanData.push({
-                reg: reg,
-                absen: absen || null,
-                SAP_TargetAlokasi: SAP_TargetAlokasi || null,
-                kdblok: kdblok || null,
-                thntnm: thntnm || null,
-                jelajahHA: jelajahHA || null,
-                satuan: satuan || null,
-                hslpanen: hslpanen || null,
-                jmlkg: jmlkg || null,
-                stpikul: stpikul || null,
-                pct: pct || null,
-                ms: ms || null,
-                jendangan: jendangan || null
-            });
+    // Proses data per baris karyawan
+    $('tbody tr').each(function(index) {
+        const row = $(this);
+        const data = {
+            register: row.find('td:eq(1)').text(), // Kolom register
+            mandor: row.find('td:eq(2)').text(),   // Kolom Reg.SAP (mandor)
+            Referensi: row.find('td:eq(3)').text(), // Kolom Nama
+            Keterangan: row.find('td:eq(4)').text(), // Kolom Jabatan
+            Afdeling: row.find('td:eq(5)').text(), // Kolom Afdeling
+            Kehadiran: row.find('select[name^="data[' + index + '][absen]"]').val(), // KodeAbsen
+            TargetAokasiBiaya: row.find('select[name^="data[' + index + '][target_alokasi]"]').val(),
+            LocationCode: row.find('select[name^="data[' + index + '][lokasi]"], input[name^="data[' + index + '][lokasi]"]').val().split(' - ')[0], // Ambil Blok_SAP saja
+            thntnm: row.find('input[name^="data[' + index + '][thntnm]"]').val(),
+            Aktifitas: row.find('select[name^="data[' + index + '][aktifitas]"], input[name^="data[' + index + '][aktifitas]"]').val().split(' - ')[0], // Ambil Aktifitas saja
+            Luasan: row.find('input[name^="data[' + index + '][jelajahHA]"]').val(),
+            kgpikul: row.find('input[name^="data[' + index + '][jmlkg]"]').val(),
+            stpikul: row.find('input[name^="data[' + index + '][stpikul]"]').val(),
+            grup: row.find('select[name^="data[' + index + '][ms]"]').val(),
+            Jendangan: row.find('select[name^="data[' + index + '][jendangan]"]').val(),
+            Tanggal: $('#tanggal').val(), // Input tanggal manual
+            plant: '{{ session("selected_kebun") }}' // Session plant (misal: "4K08")
+        };
+
+        // Kolom yang kosong atau tidak digunakan
+        data['#'] = '#'; // Untuk AMB(%) dan Hasil Panen jika tidak disimpan
+        karyawanData.push(data);
+    });
+
+    // Kirim data via AJAX
+    $.ajax({
+        url: '{{ route("checkroll.simpan-absensi") }}',
+        method: 'POST',
+        data: {
+            _token: '{{ csrf_token() }}',
+            data: JSON.stringify(karyawanData)
+        },
+        success: function(response) {
+            alert(response.message);
+            if (response.success) {
+                location.reload();
+            }
+        },
+        error: function(xhr) {
+            alert('Terjadi kesalahan: ' + xhr.responseJSON?.message || xhr.statusText);
         }
     });
+});
 
     // Jika tidak ada data absen sama sekali
     if (karyawanData.length === 0) {
@@ -735,10 +803,10 @@
 
             data.forEach(item => {
                 const displayText = type === 'bloksap'
-                    ? `${item.NamaBlok} - ${item.Uraian}`
+                    ? `${item.Blok_SAP} - ${item.Uraian}`
                     : `${item.CostCenter} - ${item.Uraian}`;
 
-                const value = type === 'bloksap' ? item.NamaBlok : item.CostCenter;
+                const value = type === 'bloksap' ? item.Blok_SAP : item.CostCenter;
 
                 selectElement.append(new Option(
                     displayText,
@@ -772,18 +840,18 @@
                 }
             });
 
-            if (type === 'bloksap') {
-                selectElement.off('change').on('change', function() {
-                    const selectedItem = data.find(b => b.NamaBlok == $(this).val());
-                    tahunTanamInput.val(selectedItem ? selectedItem.ThnTnm : '');
-                });
-            } else {
-                tahunTanamInput.val('');
-            }
-            // Paksa tampilkan nilai yang dipilih jika ada
-            if (currentValue) {
-                selectElement.val(currentValue).trigger('change');
-            }
+                if (type === 'bloksap') {
+                    selectElement.off('change').on('change', function() {
+                        const selectedItem = data.find(b => b.Blok_SAP == $(this).val());
+                        tahunTanamInput.val(selectedItem ? selectedItem.ThnTnm : '');
+                    });
+                } else {
+                    tahunTanamInput.val('');
+                }
+                // Paksa tampilkan nilai yang dipilih jika ada
+                if (currentValue) {
+                    selectElement.val(currentValue).trigger('change');
+                }
 
         }).fail(function(xhr) {
             console.error(`Gagal memuat ${type}:`, xhr.responseText);

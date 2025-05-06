@@ -55,6 +55,7 @@ class CheckrollController extends Controller
 
             $absen = DB::Connection("AMCO")
                 ->table("AMCO_KodeAbsen")
+                ->select('KodeAbsen', 'Uraian')
                 ->get() ?? [];
 
             $target_alokasi = DB::connection('AMCO')
@@ -167,107 +168,46 @@ class CheckrollController extends Controller
 
     public function simpanAbsensi(Request $request)
 {
-    DB::connection('checkroll')->beginTransaction();
+    DB::connection('AMCO')->beginTransaction();
 
     try {
-        $validated = $request->validate([
-            'tanggal' => 'required|date_format:d-m-Y',
-            'kd_afd' => 'required',
-            'reg_mandor' => 'required',
-            'data' => 'required|min:1'
-        ]);
-
         $dataKaryawan = json_decode($request->data, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception('Format data karyawan tidak valid');
+            throw new \Exception('Format data tidak valid.');
         }
 
-        $tanggal = Carbon::createFromFormat('d-m-Y', $request->tanggal)->format('Y-m-d');
-        $kodeafd = str_replace('AFD', '', $request->kd_afd);
-        $kodeunit = session('selected_kebun');
-
-        $savedCount = 0;
-        $errors = [];
-
-        foreach ($dataKaryawan as $item) {
-            try {
-                // Skip jika tidak ada absen (karena ini field utama)
-                if (empty($item['absen'])) continue;
-
-                $karyawan = DB::connection('AMCO')
-                    ->table('AMCO_Dik as d')
-                    ->join('AMCO_MandorKaryawan as mk', 'd.REG', '=', 'mk.Register')
-                    ->where('d.REG', $item['reg'])
-                    ->first();
-
-                if (!$karyawan) {
-                    $errors[] = "Karyawan dengan REG {$item['reg']} tidak ditemukan";
-                    continue;
-                }
-
-                $dataToSave = [
-                    'tanggal' => $tanggal,
-                    'SAP_TargetAlokasi' => $item['SAP_TargetAlokasi'] ?? null,
-                    'kodeunit' => $karyawan->KD_KBN ?? $kodeunit,
-                    'kodeafd' => $karyawan->KD_AFD ?? $kodeafd,
-                    'regmdr' => $karyawan->regmdr ?? $request->reg_mandor,
-                    'register' => $karyawan->REG,
-                    'kodeabs' => $item['absen'],
-                    'nama' => $karyawan->NAMA,
-                    'TglInput' => now(),
-                ];
-
-                // Tambahkan field opsional hanya jika ada nilai
-                $optionalFields = [
-                    'target_alokasi', 'kdblok', 'thntnm', 'jelajahHA', 'satuan',
-                    'hslpanen', 'jmlkg', 'stpikul', 'pct', 'ms', 'jendangan'
-                ];
-
-                foreach ($optionalFields as $field) {
-                    if (isset($item[$field]) && $item[$field] !== '') {
-                        $dataToSave[$field] = $item[$field];
-                    }
-                }
-
-                // Cek apakah data sudah ada
-                $existing = DB::connection('checkroll')
-                    ->table('GajiAbsensi')
-                    ->where('tanggal', $tanggal)
-                    ->where('register', $karyawan->REG)
-                    ->first();
-
-                if ($existing) {
-                    // Update hanya jika ada perubahan
-                    DB::connection('checkroll')
-                        ->table('GajiAbsensi')
-                        ->where('register', $existing->register)
-                        ->where('tanggal', $tanggal)
-                        ->update($dataToSave);
-                } else {
-                    // Insert baru
-                    DB::connection('checkroll')
-                        ->table('GajiAbsensi')
-                        ->insert($dataToSave);
-                }
-
-                $savedCount++;
-            } catch (\Exception $e) {
-                $errors[] = "Gagal simpan data {$item['reg']}: " . $e->getMessage();
-                Log::error("Gagal simpan absen {$item['reg']}: " . $e->getMessage());
-            }
+        foreach ($dataKaryawan as $data) {
+            DB::connection('AMCO')
+                ->table('AMCO_KKerja_BKM')
+                ->insert([
+                    'register' => $data['register'],
+                    'mandor' => $data['mandor'],
+                    'Referensi' => $data['Referensi'],
+                    'Keterangan' => $data['Keterangan'],
+                    'Afdeling' => $data['Afdeling'],
+                    'Kehadiran' => $data['Kehadiran'],
+                    'TargetAokasiBiaya' => $data['TargetAokasiBiaya'],
+                    'LocationCode' => $data['LocationCode'],
+                    'thntnm' => $data['thntnm'],
+                    'Aktifitas' => $data['Aktifitas'],
+                    'Luasan' => $data['Luasan'],
+                    'kgpikul' => $data['kgpikul'],
+                    'stpikul' => $data['stpikul'],
+                    'grup' => $data['grup'],
+                    'Jendangan' => $data['Jendangan'],
+                    'Tanggal' => Carbon::createFromFormat('d-m-Y', $data['Tanggal'])->format('Y-m-d'),
+                    'plant' => $data['plant']
+                ]);
         }
 
-        DB::connection('checkroll')->commit();
-
+        DB::connection('AMCO')->commit();
         return response()->json([
-            'success' => $savedCount > 0,
-            'message' => "Data berhasil disimpan ($savedCount record)" . (!empty($errors) ? " | Error: " . implode(', ', $errors) : ''),
-            'errors' => $errors
+            'success' => true,
+            'message' => 'Data berhasil disimpan.'
         ]);
 
     } catch (\Exception $e) {
-        DB::connection('checkroll')->rollBack();
-        Log::error('Error utama simpan absensi: ' . $e->getMessage());
+        DB::connection('AMCO')->rollBack();
         return response()->json([
             'success' => false,
             'message' => 'Gagal menyimpan data: ' . $e->getMessage()
