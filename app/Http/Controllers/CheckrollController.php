@@ -176,7 +176,13 @@ class CheckrollController extends Controller
             throw new \Exception('Format data tidak valid.');
         }
 
+        // Debug log
+        \Log::info('Data yang diterima:', $dataKaryawan);
+
         foreach ($dataKaryawan as $data) {
+            // Debug log untuk setiap data
+            \Log::info('Memproses data karyawan:', $data);
+
             DB::connection('AMCO')
                 ->table('AMCO_KKerja_BKM')
                 ->insert([
@@ -186,7 +192,7 @@ class CheckrollController extends Controller
                     'Keterangan' => $data['Keterangan'],
                     'Afdeling' => $data['Afdeling'],
                     'Kehadiran' => $data['Kehadiran'],
-                    'TargetAokasiBiaya' => $data['TargetAokasiBiaya'],
+                    'TargetAlokasiBiaya' => $data['TargetAlokasiBiaya'],
                     'LocationCode' => $data['LocationCode'],
                     'thntnm' => $data['thntnm'],
                     'Aktifitas' => $data['Aktifitas'],
@@ -196,7 +202,8 @@ class CheckrollController extends Controller
                     'grup' => $data['grup'],
                     'Jendangan' => $data['Jendangan'],
                     'Tanggal' => Carbon::createFromFormat('d-m-Y', $data['Tanggal'])->format('Y-m-d'),
-                    'plant' => $data['plant']
+                    'kodeunit' => $data['plant'],
+                    'Afdeling1'=> $data['Afdeling']
                 ]);
         }
 
@@ -208,6 +215,10 @@ class CheckrollController extends Controller
 
     } catch (\Exception $e) {
         DB::connection('AMCO')->rollBack();
+        \Log::error('Error saat menyimpan data:', [
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
         return response()->json([
             'success' => false,
             'message' => 'Gagal menyimpan data: ' . $e->getMessage()

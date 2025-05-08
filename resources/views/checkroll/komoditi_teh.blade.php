@@ -143,6 +143,7 @@
 </div> @endsection
 
 @push('styles')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         /* Gaya dasar tabel */
@@ -256,7 +257,6 @@
 @push('scripts')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.id.min.js"></script>
 <script>
@@ -355,256 +355,222 @@ $(document).ready(function() {
 
     // Handle form submission
     $('#form-komoditi-teh').on('submit', function(e) {
-    e.preventDefault();
+        e.preventDefault();
 
-    // Validasi jendangan untuk aktifitas tertentu - TAMBAHKAN DI SINI
-    let isValidJendangan = true;
-    $('.select2-aktifitas').each(function() {
-        const aktifitas = $(this).val();
-        const row = $(this).closest('tr');
-        
-        if (['53501', '53502', '53503'].includes(aktifitas)) {
-            const jendangan = row.find('.select2-jendangan').val();
-            if (!jendangan) {
-                isValidJendangan = false;
-                row.css('background-color', '#ffdddd');
-                alert('Harap pilih Jendangan untuk aktifitas ' + aktifitas + ' pada baris ' + (row.index() + 1));
-                return false; // Keluar dari each loop
-            } else {
-                row.css('background-color', '');
+        // Validasi jendangan untuk aktifitas tertentu
+        let isValidJendangan = true;
+        $('.select2-aktifitas').each(function() {
+            const aktifitas = $(this).val();
+            const row = $(this).closest('tr');
+            
+            if (['53501', '53502', '53503'].includes(aktifitas)) {
+                const jendangan = row.find('.select2-jendangan').val();
+                if (!jendangan) {
+                    isValidJendangan = false;
+                    row.css('background-color', '#ffdddd');
+                    alert('Harap pilih Jendangan untuk aktifitas ' + aktifitas + ' pada baris ' + (row.index() + 1));
+                } else {
+                    row.css('background-color', '');
+                }
             }
-        }
-    });
+        });
 
-    if (!isValidJendangan) {
-        $('button[type="submit"]').prop('disabled', false).html('Simpan');
-        return;
-    }
-
-    // Cek apakah ada data karyawan yang ditampilkan
-    if ($('#tabel-karyawan tbody tr').length === 0) {
-        alert('Tidak ada data karyawan yang ditampilkan');
-        return;
-    }
-
-    // Show loading indicator
-    $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
-
-    // Validasi minimal
-    const kd_afd = $('#kd_afd').val();
-    const reg_mandor = $('#reg_mandor').val();
-
-    if (!kd_afd || !reg_mandor) {
-        alert('Silakan pilih Afdeling dan Mandor terlebih dahulu');
-        $('button[type="submit"]').prop('disabled', false).html('Simpan');
-        return;
-    }
-
-    // Kumpulkan data karyawan
-    var karyawanData = [];
-    $('#form-absensi').submit(function(e) {
-    e.preventDefault();
-    const formData = $(this).serializeArray();
-    const karyawanData = [];
-
-    // Proses data per baris karyawan
-    $('tbody tr').each(function(index) {
-        const row = $(this);
-        const data = {
-            register: row.find('td:eq(1)').text(), // Kolom register
-            mandor: row.find('td:eq(2)').text(),   // Kolom Reg.SAP (mandor)
-            Referensi: row.find('td:eq(3)').text(), // Kolom Nama
-            Keterangan: row.find('td:eq(4)').text(), // Kolom Jabatan
-            Afdeling: row.find('td:eq(5)').text(), // Kolom Afdeling
-            Kehadiran: row.find('select[name^="data[' + index + '][absen]"]').val(), // KodeAbsen
-            TargetAokasiBiaya: row.find('select[name^="data[' + index + '][target_alokasi]"]').val(),
-            LocationCode: row.find('select[name^="data[' + index + '][lokasi]"], input[name^="data[' + index + '][lokasi]"]').val().split(' - ')[0], // Ambil Blok_SAP saja
-            thntnm: row.find('input[name^="data[' + index + '][thntnm]"]').val(),
-            Aktifitas: row.find('select[name^="data[' + index + '][aktifitas]"], input[name^="data[' + index + '][aktifitas]"]').val().split(' - ')[0], // Ambil Aktifitas saja
-            Luasan: row.find('input[name^="data[' + index + '][jelajahHA]"]').val(),
-            kgpikul: row.find('input[name^="data[' + index + '][jmlkg]"]').val(),
-            stpikul: row.find('input[name^="data[' + index + '][stpikul]"]').val(),
-            grup: row.find('select[name^="data[' + index + '][ms]"]').val(),
-            Jendangan: row.find('select[name^="data[' + index + '][jendangan]"]').val(),
-            Tanggal: $('#tanggal').val(), // Input tanggal manual
-            plant: '{{ session("selected_kebun") }}' // Session plant (misal: "4K08")
-        };
-
-        // Kolom yang kosong atau tidak digunakan
-        data['#'] = '#'; // Untuk AMB(%) dan Hasil Panen jika tidak disimpan
-        karyawanData.push(data);
-    });
-
-    // Kirim data via AJAX
-    $.ajax({
-        url: '{{ route("checkroll.simpan-absensi") }}',
-        method: 'POST',
-        data: {
-            _token: '{{ csrf_token() }}',
-            data: JSON.stringify(karyawanData)
-        },
-        success: function(response) {
-            alert(response.message);
-            if (response.success) {
-                location.reload();
-            }
-        },
-        error: function(xhr) {
-            alert('Terjadi kesalahan: ' + xhr.responseJSON?.message || xhr.statusText);
-        }
-    });
-});
-
-    // Jika tidak ada data absen sama sekali
-    if (karyawanData.length === 0) {
-        alert('Silakan isi kode absen untuk minimal 1 karyawan');
-        $('button[type="submit"]').prop('disabled', false).html('Simpan');
-        return;
-    }
-
-    // Validasi untuk FF (Block Master)
-    let isValid = true;
-    $('select.target-alokasi-select').each(function() {
-        const row = $(this).closest('tr');
-        const targetValue = $(this).val();
-
-        if (targetValue && targetValue.includes('FF - Block Master')) {
-            const lokasi = row.find('select.select2-bloksap, input.lokasi-input').val();
-            const aktifitas = row.find('select.select2-aktifitas, input.aktifitas-input').val();
-            const jelajah = row.find('.jelajah-input').val();
-            const satuan = row.find('.satuan-input').val();
-            const panen = row.find('.panen-input').val();
-
-            if (!lokasi || !aktifitas || !jelajah || !satuan || !panen) {
-                isValid = false;
-                row.css('background-color', '#ffdddd');
-                alert('Harap lengkapi semua field yang diperlukan untuk FF - Block Master pada baris ' + (row.index() + 1));
-                return false;
-            } else {
-                row.css('background-color', '');
-            }
-        }
-    });
-
-    if (!isValid) {
-        $('button[type="submit"]').prop('disabled', false).html('Simpan');
-        return;
-    }
-
-    // Kirim data ke server
-    $.ajax({
-        url: '{{ route("checkroll.simpan-absensi") }}',
-        method: 'POST',
-        data: {
-            _token: '{{ csrf_token() }}',
-            tanggal: $('#tanggal').val(),
-            kd_afd: $('#kd_afd').val(),
-            reg_mandor: $('#reg_mandor').val(),
-            data: JSON.stringify(karyawanData)
-        },
-        success: function(response) {
-            alert(response.message);
-            if (response.success) {
-                location.reload();
-            }
-        },
-        error: function(xhr) {
-            let errorMsg = 'Terjadi kesalahan: ';
-            if (xhr.responseJSON && xhr.responseJSON.message) {
-                errorMsg += xhr.responseJSON.message;
-            } else {
-                errorMsg += xhr.statusText;
-            }
-            alert(errorMsg);
-        },
-        complete: function() {
+        if (!isValidJendangan) {
             $('button[type="submit"]').prop('disabled', false).html('Simpan');
+            return;
         }
+
+        // Validasi untuk FF (Block Master)
+        let isValidFF = true;
+        $('select.target-alokasi-select').each(function() {
+            const row = $(this).closest('tr');
+            const targetValue = $(this).val();
+
+            if (targetValue && targetValue.includes('FF - Block Master')) {
+                const lokasi = row.find('select.select2-bloksap, input.lokasi-input').val();
+                const aktifitas = row.find('select.select2-aktifitas, input.aktifitas-input').val();
+                const jelajah = row.find('.jelajah-input').val();
+                const satuan = row.find('.satuan-input').val();
+                const panen = row.find('.panen-input').val();
+
+                if (!lokasi || !aktifitas || !jelajah || !satuan || !panen) {
+                    isValidFF = false;
+                    row.css('background-color', '#ffdddd');
+                    alert('Harap lengkapi semua field yang diperlukan untuk FF - Block Master pada baris ' + (row.index() + 1));
+                } else {
+                    row.css('background-color', '');
+                }
+            }
+        });
+
+        if (!isValidFF) {
+            $('button[type="submit"]').prop('disabled', false).html('Simpan');
+            return;
+        }
+
+        // Kumpulkan data karyawan
+        var karyawanData = [];
+        $('tbody tr').each(function(index) {
+            const row = $(this);
+            const absenValue = row.find('.absen-select').val();
+
+            // Proses data per baris karyawan
+            if (absenValue) {
+                const locationValue = row.find('select[name^="data[' + index + '][lokasi]"], input[name^="data[' + index + '][lokasi]"]').val();
+                const aktifitasSelect = row.find('select[name^="data[' + index + '][aktifitas]"]');
+                const aktifitasValue = aktifitasSelect.length ? aktifitasSelect.val() : row.find('input[name^="data[' + index + '][aktifitas]"]').val();
+                
+                console.log('Aktifitas Select Element:', aktifitasSelect);
+                console.log('Aktifitas Value:', aktifitasValue);
+                
+                const data = {
+                    register: row.find('td:eq(1)').text().trim().substring(0, 50),
+                    mandor: row.find('td:eq(2)').text().trim().substring(0, 50),
+                    Referensi: row.find('td:eq(3)').text().trim().substring(0, 50),
+                    Keterangan: row.find('td:eq(4)').text().trim().substring(0, 500),
+                    Afdeling: row.find('td:eq(5)').text().trim().substring(0, 50),
+                    Kehadiran: absenValue.substring(0, 50),
+                    TargetAlokasiBiaya: (row.find('.target-alokasi-select').val() || '').split(' - ')[0].substring(0, 50),
+                    LocationCode: locationValue ? locationValue.split(' - ')[0].substring(0, 50) : '',
+                    thntnm: (row.find('input[name^="data[' + index + '][thntnm]"]').val() || '').substring(0, 50),
+                    Aktifitas: aktifitasValue ? aktifitasValue.substring(0, 50) : '',
+                    Luasan: parseFloat(row.find('input[name^="data[' + index + '][jelajahHA]"]').val()) || 0,
+                    kgpikul: parseFloat(row.find('input[name^="data[' + index + '][jmlkg]"]').val()) || 0,
+                    stpikul: (row.find('input[name^="data[' + index + '][stpikul]"]').val() || '').substring(0, 1),
+                    grup: (row.find('select[name^="data[' + index + '][ms]"]').val() || '').substring(0, 50),
+                    Jendangan: (row.find('select[name^="data[' + index + '][jendangan]"]').val() || '').substring(0, 50),
+                    Tanggal: $('#tanggal').val(),
+                    plant: '{{ session("selected_kebun") }}'.substring(0, 50)
+                };
+
+                // Debug log untuk memeriksa data
+                console.log('Data lengkap:', data);
+                console.log('Nilai aktifitas:', aktifitasValue);
+                console.log('Element aktifitas:', aktifitasSelect);
+
+                karyawanData.push(data);
+            }
+        });
+
+        if (karyawanData.length === 0) {
+            alert('Silakan isi kode absen untuk minimal 1 karyawan');
+            $('button[type="submit"]').prop('disabled', false).html('Simpan');
+            return;
+        }
+
+        // Kirim data ke server
+        $.ajax({
+            url: '{{ route("checkroll.simpan-absensi") }}',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                tanggal: $('#tanggal').val(),
+                kd_afd: $('#kd_afd').val(),
+                reg_mandor: $('#reg_mandor').val(),
+                data: JSON.stringify(karyawanData)
+            },
+            success: function(response) {
+                alert(response.message);
+                if (response.success) {
+                    location.reload();
+                }
+            },
+            error: function(xhr) {
+                let errorMsg = 'Terjadi kesalahan: ';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg += xhr.responseJSON.message;
+                } else {
+                    errorMsg += xhr.statusText;
+                }
+                alert(errorMsg);
+            },
+            complete: function() {
+                $('button[type="submit"]').prop('disabled', false).html('Simpan');
+            }
+        });
     });
-}); 
+
 
     // Event handler untuk perubahan aktifitas - DIPERBAIKI
     function handleAktifitasChange(selectElement) {
-    const aktifitas = $(selectElement).val();
-    const row = $(selectElement).closest('tr');
-    const kodeAfdFull = row.find('td:eq(5)').text().trim(); // Contoh: "AFD53"
-    const kodeAfd = kodeAfdFull.replace(/\D/g, ''); // Hanya ambil angka -> "53"
-    const selectedKebun = '<?php echo session("selected_kebun") ?>';
-    const jendanganSelect = row.find('.select2-jendangan');
-    const mesinSelect = row.find('.select2-mesin-petik');
-    const aktifitasJendangan = ['53501', '53502', '53503'];
-    const targetValue = row.find('.target-alokasi-select').val();
-
-
-
-    if (!targetValue.includes('FF - Block Master')) {
-        mesinSelect.val('').trigger('change').prop('disabled', true);
-        jendanganSelect.val('').trigger('change').prop('disabled', true);
-        return;
-    }
-    
-      // Reset nilai ketika aktifitas berubah
-      if (aktifitas !== '53503') {
-        mesinSelect.val('').trigger('change');
-    }
-    
-    if (!['53501', '53502', '53503'].includes(aktifitas)) {
-        jendanganSelect.val('').trigger('change');
-    }
-
-    if (aktifitas === '53503') {
+        const aktifitas = $(selectElement).val();
+        const row = $(selectElement).closest('tr');
         const kodeAfdFull = row.find('td:eq(5)').text().trim();
         const kodeAfd = kodeAfdFull.replace(/\D/g, '');
         const selectedKebun = '<?php echo session("selected_kebun") ?>';
-        
-        loadMesinPetik(row, selectedKebun, kodeAfd);
-        mesinSelect.prop('disabled', false);
-    } else {
-        mesinSelect.prop('disabled', true);
-    }
+        const jendanganSelect = row.find('.select2-jendangan');
+        const mesinSelect = row.find('.select2-mesin-petik');
+        const aktifitasJendangan = ['53501', '53502', '53503'];
+        const targetValue = row.find('.target-alokasi-select').val();
 
-    // Logika untuk jendangan
-    if (['53501', '53502', '53503'].includes(aktifitas)) {
-        jendanganSelect.prop('disabled', false);
-    } else {
-        jendanganSelect.prop('disabled', true);
-    }
-
-    if (aktifitasJendangan.includes(aktifitas)) {
-        // Aktifkan dropdown jendangan
-        jendanganSelect.prop('disabled', false);
-        
-        // Isi opsi jendangan jika belum ada
-        if (jendanganSelect.find('option').length <= 1) {
-            jendanganSelect.empty()
-                .append('<option value="">Pilih Jendangan</option>')
-                .append('<option value="JD1">JD1</option>')
-                .append('<option value="JD2">JD2</option>')
-                .append('<option value="JD3">JD3</option>');
-            
-            // Inisialisasi Select2 jika belum
-            if (!jendanganSelect.hasClass('select2-hidden-accessible')) {
-                jendanganSelect.select2({
-                    placeholder: "Pilih Jendangan",
-                    allowClear: false,
-                    width: '100%'
-                });
-            }
+        if (!targetValue.includes('FF - Block Master')) {
+            mesinSelect.val('').trigger('change').prop('disabled', true);
+            jendanganSelect.val('').trigger('change').prop('disabled', true);
+            return;
         }
-    } else {
-        // Nonaktifkan dan kosongkan jika bukan aktifitas yang ditentukan
-        jendanganSelect.val('').prop('disabled', true);
-    }
+        
+        // Reset nilai ketika aktifitas berubah
+        if (aktifitas !== '53503') {
+            mesinSelect.val('').trigger('change');
+        }
+        
+        if (!['53501', '53502', '53503'].includes(aktifitas)) {
+            jendanganSelect.val('').trigger('change');
+        }
 
-    console.log('Kode Afd (full):', kodeAfdFull, 'Kode Afd (clean):', kodeAfd);
-    
-    if (aktifitas === '53503') {
-        loadMesinPetik(row, selectedKebun, kodeAfd);
-        row.find('.select2-mesin-petik').prop('disabled', false);
-    } else {
-        row.find('.select2-mesin-petik').val('').prop('disabled', true);
+        if (aktifitas === '53503') {
+            const kodeAfdFull = row.find('td:eq(5)').text().trim();
+            const kodeAfd = kodeAfdFull.replace(/\D/g, '');
+            const selectedKebun = '<?php echo session("selected_kebun") ?>';
+            
+            loadMesinPetik(row, selectedKebun, kodeAfd);
+            mesinSelect.prop('disabled', false);
+        } else {
+            mesinSelect.prop('disabled', true);
+        }
+
+        // Logika untuk jendangan
+        if (['53501', '53502', '53503'].includes(aktifitas)) {
+            jendanganSelect.prop('disabled', false);
+        } else {
+            jendanganSelect.prop('disabled', true);
+        }
+
+        if (aktifitasJendangan.includes(aktifitas)) {
+            // Aktifkan dropdown jendangan
+            jendanganSelect.prop('disabled', false);
+            
+            // Isi opsi jendangan jika belum ada
+            if (jendanganSelect.find('option').length <= 1) {
+                jendanganSelect.empty()
+                    .append('<option value="">Pilih Jendangan</option>')
+                    .append('<option value="JD1">JD1</option>')
+                    .append('<option value="JD2">JD2</option>')
+                    .append('<option value="JD3">JD3</option>');
+                
+                // Inisialisasi Select2 jika belum
+                if (!jendanganSelect.hasClass('select2-hidden-accessible')) {
+                    jendanganSelect.select2({
+                        placeholder: "Pilih Jendangan",
+                        allowClear: false,
+                        width: '100%'
+                    });
+                }
+            }
+        } else {
+            // Nonaktifkan dan kosongkan jika bukan aktifitas yang ditentukan
+            jendanganSelect.val('').prop('disabled', true);
+        }
+
+        console.log('Kode Afd (full):', kodeAfdFull, 'Kode Afd (clean):', kodeAfd);
+        
+        if (aktifitas === '53503') {
+            loadMesinPetik(row, selectedKebun, kodeAfd);
+            row.find('.select2-mesin-petik').prop('disabled', false);
+        } else {
+            row.find('.select2-mesin-petik').val('').prop('disabled', true);
+        }
     }
-}
 
     $(document).ready(function() {
         // Inisialisasi Select2 untuk target alokasi
