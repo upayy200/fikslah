@@ -1,146 +1,163 @@
 @extends('layouts.app')
 
-@section('content') <div class="container mt-4">
-  <h4>Absensi Komoditi Teh</h4>
-  <form id="form-komoditi-teh"> @csrf @include('layouts.alert') {{-- Tanggal --}}
-    <div class="form-group mb-3">
-        <label for="tanggal">Tanggal</label>
-        <input type="text" class="form-control datepicker" name="tanggal" id="tanggal" autocomplete="off">
-    </div>
-    {{-- Dropdown Afdeling/Bagian --}}
-    <div class="form-group mb-3">
-        <label for="kd_afd">Afdeling/Bagian</label>
-        <select name="kd_afd" id="kd_afd" class="form-control select2-afdeling">
-            <option value="">-- Pilih Afdeling/Bagian --</option>
-            @foreach ($afdBagian as $item)
-            <option value="{{ $item->KodeAfdeling }}">{{ $item->KodeAfdeling }} - {{ $item->NamaAfdeling }}</option>
-            @endforeach
-        </select>
-    </div>
-    
-    <div class="form-group mb-4">
-        <label for="reg_mandor">Reg. Mandor</label>
-        <select name="reg_mandor" id="reg_mandor" class="form-control select2-mandor">
-            <option value="">-- Pilih Mandor --</option>
-        </select>
-    </div>
-    
-    <div class="d-flex justify-content-end">
-        <a href="#" class="btn btn-primary" id="btn-read">READ</a>
-    </div>
-    {{-- Tabel Detail Karyawan --}} @php $karyawan = session()->get('karyawan'); $absen = session()->get('absen'); $target_alokasi = session()->get('target_alokasi'); @endphp @if(isset($karyawan) && count($karyawan) > 0) <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
-      <table class="table table-bordered table-striped" id="tabel-karyawan">
-        <thead class="table-success text-center">
-          <tr>
-            <th style="min-width: 50px;">No</th>
-            <th style="min-width: 120px;">Register</th>
-            <th style="min-width: 100px;">Reg.SAP</th>
-            <th style="min-width: 120px;">Nama</th>
-            <th style="min-width: 200px;">Jabatan</th>
-            <th style="min-width: 80px;">Afdeling</th>
-            <th style="min-width: 100px;">Kode Absen</th> {{-- AMCO_KodeAbsen --}}
-            <th style="min-width: 180px;">Target Alokasi</th>
-            <th style="min-width: 120px;">Location Code/CC</th> {{--FF AMCO_BlokSAP --}} {{--CC AMCO_CostCenter --}}
-            <th style="min-width: 120px;">Tahun Tanam</th> {{--FF AMCO_BlokSAP --}}
-            <th style="min-width: 120px;">Aktifitas</th> {{--FF AMCO_Aktifitas (SEMUA SAMA) (KC=TH)--}}
-            <th style="min-width: 150px;">Luas Jelajah (Ha)</th> {{-- FF entri biasa --}}
-            <th style="min-width: 100px;">Satuan</th> {{-- FF entri biasa --}}
-            <th style="min-width: 120px;">Hasil Panen</th>{{-- FF entri biasa --}}
-            <th style="min-width: 100px;">Kg Pikul</th>{{-- FF entri biasa --}} {{-- AMCO_ArealPikul --}}
-            <th style="min-width: 100px;">Sts Pikul</th>{{-- FF entri biasa --}} {{-- AMCO_ArealPikul --}}
-            <th style="min-width: 100px;">AMB (%)</th>{{-- FF entri biasa --}}
-            <th style="min-width: 100px;">Mesin Petik</th> {{-- FF [Ref_MesinPetik]   53503 --}}
-            <th style="min-width: 100px;">Jendangan</th> {{-- AKTIFITAS 53501,53502,53503 = JD1,JD2,JD3 (teks biasa) --}}
-          </tr>
-        </thead>
-        <tbody>
-            @foreach($karyawan as $index => $item)
-            <tr>
-              <td>{{ $index + 1 }}</td>
-              <td>{{ $item->REG }}</td>
-              <td>{{ $item->REG_SAP }}</td>
-              <td>{{ $item->NAMA }}</td>
-              <td>{{ $item->NAMA_JAB }}</td>
-              <td>{{ $item->KD_AFD }}</td>
-              <td>
-                <select name="data[{{ $index }}][absen]" class="form-control absen-select" onchange="handleAbsenChange(this)">
-                  <option value="">Pilih</option>
-                  @foreach ($absen as $item2)
-                    <option value="{{ $item2->KodeAbsen }}" @selected(old('data.'.$index.'.absen')==$item2->KodeAbsen)>
+@section('content')
+<div class="container-fluid px-0">
+    <div class="row">
+        <div class="col-12 col-xl-10 mx-auto">
+            <div class="bg-white rounded-3 shadow-sm p-4 mb-4">
+                <h4 class="mb-4" style="border-bottom:2px solid #4CAF50;padding-bottom:8px;">Absensi Komoditi Teh</h4>
+                <form id="form-komoditi-teh">
+                    @csrf
+                    @include('layouts.alert')
+                    <!-- Form input -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="tanggal">Tanggal</label>
+                            <input type="text" class="form-control datepicker" name="tanggal" id="tanggal" autocomplete="off">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="kd_afd">Afdeling/Bagian</label>
+                            <select name="kd_afd" id="kd_afd" class="form-control select2-afdeling">
+                                <option value="">-- Pilih Afdeling/Bagian --</option>
+                                @foreach ($afdBagian as $item)
+                                <option value="{{ $item->KodeAfdeling }}">{{ $item->KodeAfdeling }} - {{ $item->NamaAfdeling }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="reg_mandor">Reg. Mandor</label>
+                            <select name="reg_mandor" id="reg_mandor" class="form-control select2-mandor">
+                                <option value="">-- Pilih Mandor --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end mb-2">
+                        <a href="#" class="btn btn-primary" id="btn-read">READ</a>
+                    </div>
+                    <!-- Tabel Karyawan -->
+                    @php
+                        $karyawan = session()->get('karyawan');
+                        $absen = session()->get('absen');
+                        $target_alokasi = session()->get('target_alokasi');
+                    @endphp
+                    @if(isset($karyawan) && count($karyawan) > 0)
+                    <div class="table-responsive" style="max-height: 80vh;">
+                        <table class="table table-bordered table-striped" id="tabel-karyawan" style="min-width:1800px;">
+                            <thead class="table-success text-center">
+                                <tr>
+                                    <th style="min-width: 50px;">No</th>
+                                    <th style="min-width: 120px;">Register</th>
+                                    <th style="min-width: 100px;">Reg.SAP</th>
+                                    <th style="min-width: 120px;">Nama</th>
+                                    <th style="min-width: 200px;">Jabatan</th>
+                                    <th style="min-width: 80px;">Afdeling</th>
+                                    <th style="min-width: 100px;">Kode Absen</th>
+                                    <th style="min-width: 180px;">Target Alokasi</th>
+                                    <th style="min-width: 120px;">Location Code/CC</th>
+                                    <th style="min-width: 120px;">Tahun Tanam</th>
+                                    <th style="min-width: 120px;">Aktifitas</th>
+                                    <th style="min-width: 150px;">Luas Jelajah (Ha)</th>
+                                    <th style="min-width: 100px;">Satuan</th>
+                                    <th style="min-width: 120px;">Hasil Panen</th>
+                                    <th style="min-width: 100px;">Kg Pikul</th>
+                                    <th style="min-width: 100px;">Sts Pikul</th>
+                                    <th style="min-width: 100px;">AMB (%)</th>
+                                    <th style="min-width: 100px;">Mesin Petik</th>
+                                    <th style="min-width: 100px;">Jendangan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($karyawan as $index => $item)
+                                <tr>
+                                  <td>{{ $index + 1 }}</td>
+                                  <td>{{ $item->REG }}</td>
+                                  <td>{{ $item->REG_SAP }}</td>
+                                  <td>{{ $item->NAMA }}</td>
+                                  <td>{{ $item->NAMA_JAB }}</td>
+                                  <td>{{ $item->KD_AFD }}</td>
+                                  <td>
+                                    <select name="data[{{ $index }}][absen]" class="form-control absen-select" onchange="handleAbsenChange(this)">
+                                      <option value="">Pilih</option>
+                                      @foreach ($absen as $item2)
+                                        <option value="{{ $item2->KodeAbsen }}" @selected(old('data.'.$index.'.absen')==$item2->KodeAbsen)>
                                     {{ $item2->KodeAbsen }} - {{ $item2->Uraian }} 
-                  </option>
-                  @endforeach
-                </select>
-              </td>
-              <td>
-                <select name="data[{{ $index }}][target_alokasi]" class="form-control target-alokasi-select">
-                  <option value="">Pilih Target</option>
-                  @foreach ($target_alokasi as $item2)
-                  <option value="{{ $item2->TargetAlokasi }} - {{ $item2->Uraian }}">
-                    {{ $item2->TargetAlokasi }} - {{ $item2->Uraian }}
-                  </option>
-                  @endforeach
-                </select>
-              </td>
-              <td style="min-width: 200px;">
-                @if(isset($item->target_alokasi) && str_contains($item->target_alokasi, 'CC'))
-                  <select name="data[{{ $index }}][lokasi]" class="form-control select2-costcenter" data-placeholder="Pilih Cost Center..." style="width: 100%">
-                    <option value=""></option>
-                    <!-- Options akan diisi via JavaScript -->
-                  </select>
-                @else
-                  <input type="text" name="data[{{ $index }}][lokasi]" class="form-control lokasi-input" value="{{ old('data.'.$index.'.lokasi', $item->lokasi ?? '') }}" style="width: 100%">
-                @endif
-              </td>
-              <td>
-                <input type="text" name="data[{{ $index }}][thntnm]" class="form-control" value="{{ old('data.'.$index.'.thntnm') }}" readonly>
-              </td>
-              <td class="aktifitas-column">
-                @if(isset($item->target_alokasi) && str_contains($item->target_alokasi, 'FF - Block Master'))
-                  <select name="data[{{ $index }}][aktifitas]" class="form-control select2-aktifitas" onchange="handleAktifitasChange(this)">
-                    <option value=""></option>
-                    <!-- Options akan diisi via JavaScript -->
-                  </select>
-                @else
-                  <input type="text" name="data[{{ $index }}][aktifitas]" class="form-control aktifitas-input" value="{{ old('data.'.$index.'.aktifitas', $item->aktifitas ?? '') }}" onchange="handleAktifitasChange(this)">
-                @endif
-              </td>
-              <td>
-                <input type="text" name="data[{{ $index }}][jelajahHA]" class="form-control jelajah-input" value="{{ old('data.'.$index.'.jelajahHA') }}" readonly>
-              </td>
-              <td>
-                <input type="text" name="data[{{ $index }}][satuan]" class="form-control satuan-input" value="{{ old('data.'.$index.'.satuan') }}" readonly>
-              </td>
-              <td>
-                <input type="text" name="data[{{ $index }}][hslpanen]" class="form-control panen-input" value="{{ old('data.'.$index.'.hslpanen') }}" readonly>
-              </td>
-              <td>
-                <input type="text" name="data[{{ $index }}][jmlkg]" class="form-control kg-input" value="{{ old('data.'.$index.'.jmlkg') }}" readonly>
-              </td>
-              <td>
-                <input type="text" name="data[{{ $index }}][stpikul]" class="form-control sts-input" value="{{ old('data.'.$index.'.stpikul') }}" readonly>
-              </td>
-              <td>
-                <input type="text" name="data[{{ $index }}][pct]" class="form-control amb-input" value="{{ old('data.'.$index.'.pct') }}" readonly>
-              </td>
-              <td>
-                <select name="data[{{ $index }}][ms]" class="form-control select2-mesin-petik" style="width: 100%">
-                  <option value="">Pilih Mesin Petik</option>
-                </select>
-              </td>
-              <td>
-                <select name="data[{{ $index }}][jendangan]" class="form-control select2-jendangan" style="width: 100%" disabled>
-                    <option value="">Pilih Jendangan</option>
-                </select>
-            </td>
-            </tr>
-            @endforeach
-          </tbody>
-      </table>
+                                      </option>
+                                      @endforeach
+                                    </select>
+                                  </td>
+                                  <td>
+                                    <select name="data[{{ $index }}][target_alokasi]" class="form-control target-alokasi-select">
+                                      <option value="">Pilih Target</option>
+                                      @foreach ($target_alokasi as $item2)
+                                      <option value="{{ $item2->TargetAlokasi }} - {{ $item2->Uraian }}">
+                                        {{ $item2->TargetAlokasi }} - {{ $item2->Uraian }}
+                                      </option>
+                                      @endforeach
+                                    </select>
+                                  </td>
+                                  <td style="min-width: 200px;">
+                                    @if(isset($item->target_alokasi) && str_contains($item->target_alokasi, 'CC'))
+                                      <select name="data[{{ $index }}][lokasi]" class="form-control select2-costcenter" data-placeholder="Pilih Cost Center..." style="width: 100%">
+                                        <option value=""></option>
+                                        <!-- Options akan diisi via JavaScript -->
+                                      </select>
+                                    @else
+                                      <input type="text" name="data[{{ $index }}][lokasi]" class="form-control lokasi-input" value="{{ old('data.'.$index.'.lokasi', $item->lokasi ?? '') }}" style="width: 100%">
+                                    @endif
+                                  </td>
+                                  <td>
+                                    <input type="text" name="data[{{ $index }}][thntnm]" class="form-control" value="{{ old('data.'.$index.'.thntnm') }}" readonly>
+                                  </td>
+                                  <td class="aktifitas-column">
+                                    <select name="data[{{ $index }}][aktifitas]" class="form-control select2-aktifitas">
+                                        <option value="">Pilih Aktifitas</option>
+                                        @if(isset($aktifitas))
+                                            @foreach ($aktifitas as $item)
+                                                <option value="{{ $item->Aktifitas }}">{{ $item->Aktifitas }} - {{ $item->Uraian }}</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                  </td>
+                                  <td>
+                                    <input type="text" name="data[{{ $index }}][jelajahHA]" class="form-control jelajah-input" value="{{ old('data.'.$index.'.jelajahHA') }}" readonly>
+                                  </td>
+                                  <td>
+                                    <input type="text" name="data[{{ $index }}][satuan]" class="form-control satuan-input" value="{{ old('data.'.$index.'.satuan') }}" readonly>
+                                  </td>
+                                  <td>
+                                    <input type="text" name="data[{{ $index }}][hslpanen]" class="form-control panen-input" value="{{ old('data.'.$index.'.hslpanen') }}" readonly>
+                                  </td>
+                                  <td>
+                                    <input type="text" name="data[{{ $index }}][jmlkg]" class="form-control kg-input" value="{{ old('data.'.$index.'.jmlkg') }}" readonly>
+                                  </td>
+                                  <td>
+                                    <input type="text" name="data[{{ $index }}][stpikul]" class="form-control sts-input" value="{{ old('data.'.$index.'.stpikul') }}" readonly>
+                                  </td>
+                                  <td>
+                                    <input type="text" name="data[{{ $index }}][pct]" class="form-control amb-input" value="{{ old('data.'.$index.'.pct') }}" readonly>
+                                  </td>
+                                  <td>
+                                    <select name="data[{{ $index }}][ms]" class="form-control select2-mesin-petik" style="width: 100%">
+                                      <option value="">Pilih Mesin Petik</option>
+                                    </select>
+                                  </td>
+                                  <td>
+                                    <select name="data[{{ $index }}][jendangan]" class="form-control select2-jendangan" style="width: 100%" disabled>
+                                        <option value="">Pilih Jendangan</option>
+                                    </select>
+                                </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <button type="submit" class="btn btn-success mt-3">Simpan</button> @endif
+                </form>
+            </div>
+        </div>
     </div>
-    <button type="submit" class="btn btn-success mt-3">Simpan</button> @endif
-  </form>
-</div> @endsection
+</div>
+@endsection
 
 @push('styles')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
@@ -301,18 +318,41 @@ $(document).ready(function() {
         const row = $(selectElement).closest('tr');
         const absenValue = $(selectElement).val();
         const targetSelect = row.find('.target-alokasi-select');
+        const aktifitasSelect = row.find('.select2-aktifitas');
+        
+        // Reset dan nonaktifkan kolom aktifitas jika kode absen belum dipilih
+        if (!absenValue) {
+            aktifitasSelect.val('').prop('disabled', true);
+            targetSelect.val('').prop('disabled', true);
+        } else {
+            aktifitasSelect.prop('disabled', false);
+            targetSelect.prop('disabled', false);
+        }
     }
 
     $(document).ready(function() {
+        // Inisialisasi Select2 untuk target alokasi
         $('.target-alokasi-select').select2({
             placeholder: "Pilih Target Alokasi",
             allowClear: false,
             width: '100%'
+        }).prop('disabled', true); // Nonaktifkan di awal
+
+        // Inisialisasi Select2 untuk aktifitas
+        $('.select2-aktifitas').select2({
+            placeholder: "Pilih Aktifitas",
+            allowClear: false,
+            width: '100%'
+        }).prop('disabled', true); // Nonaktifkan di awal
+
+        // Pasang event handler untuk perubahan kode absen
+        $(document).on('change', '.absen-select', function() {
+            handleAbsenChange(this);
         });
 
-
+        // Jalankan handleAbsenChange untuk setiap baris saat halaman dimuat
         $('.absen-select').each(function() {
-            handleAbsenChange(this); // Set status awal
+            handleAbsenChange(this);
         });
     });
 
@@ -357,6 +397,27 @@ $(document).ready(function() {
     $('#form-komoditi-teh').on('submit', function(e) {
         e.preventDefault();
 
+        // Validasi semua karyawan harus memiliki kode absen
+        let allKaryawanHasAbsen = true;
+        let emptyAbsenRows = [];
+        
+        $('tbody tr').each(function(index) {
+            const absenValue = $(this).find('.absen-select').val();
+            if (!absenValue) {
+                allKaryawanHasAbsen = false;
+                emptyAbsenRows.push(index + 1);
+                $(this).css('background-color', '#ffdddd');
+            } else {
+                $(this).css('background-color', '');
+            }
+        });
+        
+        if (!allKaryawanHasAbsen) {
+            alert('Silahkan isi absensi semua karyawan. Baris yang belum terisi: ' + emptyAbsenRows.join(', '));
+            $('button[type="submit"]').prop('disabled', false).html('Simpan');
+            return;
+        }
+
         // Validasi jendangan untuk aktifitas tertentu
         let isValidJendangan = true;
         $('.select2-aktifitas').each(function() {
@@ -365,13 +426,8 @@ $(document).ready(function() {
             
             if (['53501', '53502', '53503'].includes(aktifitas)) {
                 const jendangan = row.find('.select2-jendangan').val();
-                if (!jendangan) {
-                    isValidJendangan = false;
-                    row.css('background-color', '#ffdddd');
-                    alert('Harap pilih Jendangan untuk aktifitas ' + aktifitas + ' pada baris ' + (row.index() + 1));
-                } else {
-                    row.css('background-color', '');
-                }
+                // Kolom Jendangan menjadi opsional
+                // Tidak perlu validasi untuk kolom Jendangan
             }
         });
 
@@ -382,21 +438,17 @@ $(document).ready(function() {
 
         // Validasi untuk FF (Block Master)
         let isValidFF = true;
+        let emptyAktifitasRows = [];
         $('select.target-alokasi-select').each(function() {
             const row = $(this).closest('tr');
             const targetValue = $(this).val();
 
             if (targetValue && targetValue.includes('FF - Block Master')) {
-                const lokasi = row.find('select.select2-bloksap, input.lokasi-input').val();
                 const aktifitas = row.find('select.select2-aktifitas, input.aktifitas-input').val();
-                const jelajah = row.find('.jelajah-input').val();
-                const satuan = row.find('.satuan-input').val();
-                const panen = row.find('.panen-input').val();
-
-                if (!lokasi || !aktifitas || !jelajah || !satuan || !panen) {
+                if (!aktifitas) {
                     isValidFF = false;
+                    emptyAktifitasRows.push(row.index() + 1);
                     row.css('background-color', '#ffdddd');
-                    alert('Harap lengkapi semua field yang diperlukan untuk FF - Block Master pada baris ' + (row.index() + 1));
                 } else {
                     row.css('background-color', '');
                 }
@@ -404,6 +456,54 @@ $(document).ready(function() {
         });
 
         if (!isValidFF) {
+            alert('Harap isi Aktifitas pada baris ' + emptyAktifitasRows.join(', '));
+            $('button[type="submit"]').prop('disabled', false).html('Simpan');
+            return;
+        }
+
+        // Validasi untuk CC (Cost Center)
+        let isValidCC = true;
+        let emptyCCRows = [];
+        $('select.target-alokasi-select').each(function() {
+            const row = $(this).closest('tr');
+            const targetValue = $(this).val();
+
+            if (targetValue && targetValue.includes('CC - Cost Center')) {
+                const lokasi = row.find('select.select2-costcenter, input.lokasi-input').val();
+                if (!lokasi) {
+                    isValidCC = false;
+                    emptyCCRows.push(row.index() + 1);
+                    row.css('background-color', '#ffdddd');
+                } else {
+                    row.css('background-color', '');
+                }
+            }
+        });
+
+        if (!isValidCC) {
+            alert('Harap isi Location Code/CC pada baris ' + emptyCCRows.join(', '));
+            $('button[type="submit"]').prop('disabled', false).html('Simpan');
+            return;
+        }
+
+        // Validasi untuk Target Alokasi
+        let isValidTargetAlokasi = true;
+        let emptyTargetAlokasiRows = [];
+        $('select.target-alokasi-select').each(function() {
+            const row = $(this).closest('tr');
+            const targetValue = $(this).val();
+
+            if (!targetValue) {
+                isValidTargetAlokasi = false;
+                emptyTargetAlokasiRows.push(row.index() + 1);
+                row.css('background-color', '#ffdddd');
+            } else {
+                row.css('background-color', '');
+            }
+        });
+
+        if (!isValidTargetAlokasi) {
+            alert('Harap pilih Target Alokasi pada baris ' + emptyTargetAlokasiRows.join(', '));
             $('button[type="submit"]').prop('disabled', false).html('Simpan');
             return;
         }
@@ -414,13 +514,12 @@ $(document).ready(function() {
             const row = $(this);
             const absenValue = row.find('.absen-select').val();
 
-            // Proses data per baris karyawan
             if (absenValue) {
-                const locationValue = row.find('select[name^="data[' + index + '][lokasi]"], input[name^="data[' + index + '][lokasi]"]').val();
                 const aktifitasSelect = row.find('select[name^="data[' + index + '][aktifitas]"]');
                 const aktifitasValue = aktifitasSelect.length ? aktifitasSelect.val() : row.find('input[name^="data[' + index + '][aktifitas]"]').val();
                 
-                console.log('Aktifitas Select Element:', aktifitasSelect);
+                // Tambahkan console.log untuk debug
+                console.log('Aktifitas Select:', aktifitasSelect);
                 console.log('Aktifitas Value:', aktifitasValue);
                 
                 const data = {
@@ -431,7 +530,7 @@ $(document).ready(function() {
                     Afdeling: row.find('td:eq(5)').text().trim().substring(0, 50),
                     Kehadiran: absenValue.substring(0, 50),
                     TargetAlokasiBiaya: (row.find('.target-alokasi-select').val() || '').split(' - ')[0].substring(0, 50),
-                    LocationCode: locationValue ? locationValue.split(' - ')[0].substring(0, 50) : '',
+                    LocationCode: row.find('select[name^="data[' + index + '][lokasi]"], input[name^="data[' + index + '][lokasi]"]').val() ? row.find('select[name^="data[' + index + '][lokasi]"], input[name^="data[' + index + '][lokasi]"]').val().split(' - ')[0].substring(0, 50) : '',
                     thntnm: (row.find('input[name^="data[' + index + '][thntnm]"]').val() || '').substring(0, 50),
                     Aktifitas: aktifitasValue ? aktifitasValue.substring(0, 50) : '',
                     Luasan: parseFloat(row.find('input[name^="data[' + index + '][jelajahHA]"]').val()) || 0,
@@ -624,6 +723,7 @@ $(document).ready(function() {
         const parts = blok.text.split(' - ');
         if (parts.length < 2) return blok.text;
 
+        return parts[0] + ' - ' + parts[1];
     }
 
     // Format functions for Cost Center dropdown
@@ -935,24 +1035,25 @@ $(document).ready(function() {
         row.find('.select2-jendangan').val('').trigger('change').prop('disabled', true);
     }
 
-    const currentValue = row.find('.lokasi-input').val();
+    let currentValue = row.find('.lokasi-input').val();
     const currentAktifitas = row.find('.aktifitas-input').val();
+    // Jika FF, pastikan hanya kode Blok SAP saja yang dikirim ke initDropdown
+    let valueToSet = currentValue;
+    if (targetValue && targetValue.includes('FF - Block Master') && currentValue && currentValue.includes(' - ')) {
+        valueToSet = currentValue.split(' - ')[0].trim();
+    }
+
         destroySelect2IfExists(row);
         resetAktifitasToInput(row);
 
         if (targetValue && targetValue.includes('CC - Cost Center')) {
-            initDropdown(row, 'costcenter', currentValue);
+            initDropdown(row, 'costcenter', valueToSet);
             resetAktifitasToInput(row);
             toggleInputFields(row, false);
         } else if (targetValue && targetValue.includes('FF - Block Master')) {
-            initDropdown(row, 'bloksap', currentValue);
+            initDropdown(row, 'bloksap', valueToSet);
             initAktifitasDropdown(row, currentAktifitas);
             toggleInputFields(row, true);
-        } else {
-            destroySelect2IfExists(row);
-            resetAktifitasToInput(row);
-            row.find('input[name*="[thntnm]"]').val('');
-            toggleInputFields(row, false);
         }
     });
 
@@ -1005,15 +1106,19 @@ $(document).ready(function() {
         $('.target-alokasi-select').each(function() {
             const row = $(this).closest('tr');
             const targetValue = $(this).val();
-            const currentValue = row.find('.lokasi-input').val();
+            let currentValue = row.find('.lokasi-input').val();
+            let valueToSet = currentValue;
+            if (targetValue && targetValue.includes('FF - Block Master') && currentValue && currentValue.includes(' - ')) {
+                valueToSet = currentValue.split(' - ')[0].trim();
+            }
             const currentAktifitas = row.find('.aktifitas-input').val();
 
             if (targetValue && targetValue.includes('CC - Cost Center')) {
-                initDropdown(row, 'costcenter', currentValue);
+                initDropdown(row, 'costcenter', valueToSet);
                 resetAktifitasToInput(row);
                 toggleInputFields(row, false);
             } else if (targetValue && targetValue.includes('FF - Block Master')) {
-                initDropdown(row, 'bloksap', currentValue);
+                initDropdown(row, 'bloksap', valueToSet);
                 if (currentAktifitas) {
                     initAktifitasDropdown(row, currentAktifitas);
                 }
@@ -1035,5 +1140,48 @@ $(document).ready(function() {
     });
 
     });
+
+// Fungsi untuk mengatur warna input berdasarkan kondisi
+function updateInputColors() {
+    $('tbody tr').each(function() {
+        const row = $(this);
+        const targetValue = row.find('.target-alokasi-select').val();
+        const aktifitas = row.find('.select2-aktifitas').val();
+        
+        // Reset semua input ke readonly (merah)
+        row.find('input[type="text"]').addClass('readonly').removeClass('editable');
+        
+        if (targetValue && targetValue.includes('FF - Block Master')) {
+            // Untuk FF - Block Master, semua input bisa diisi (hijau)
+            row.find('.jelajah-input, .satuan-input, .panen-input, .kg-input, .sts-input, .amb-input')
+               .removeClass('readonly')
+               .addClass('editable');
+            
+            // Khusus untuk aktifitas 53503, mesin petik bisa diisi
+            if (aktifitas === '53503') {
+                row.find('.select2-mesin-petik').closest('.select2-container')
+                   .removeClass('readonly')
+                   .addClass('editable');
+            }
+            
+            // Untuk aktifitas 53501, 53502, 53503, jendangan bisa diisi
+            if (['53501', '53502', '53503'].includes(aktifitas)) {
+                row.find('.select2-jendangan').closest('.select2-container')
+                   .removeClass('readonly')
+                   .addClass('editable');
+            }
+        }
+    });
+}
+
+// Panggil fungsi saat halaman dimuat
+$(document).ready(function() {
+    updateInputColors();
+    
+    // Panggil fungsi saat ada perubahan pada target alokasi atau aktifitas
+    $(document).on('change', '.target-alokasi-select, .select2-aktifitas', function() {
+        updateInputColors();
+    });
+});
 </script>
 @endpush

@@ -11,83 +11,91 @@ use Illuminate\Support\Facades\Log;
 class CheckrollController extends Controller
 {
     public function komoditiTeh(Request $request)
-{
-    $selectedKebun = session('selected_kebun');
+    {
+        $selectedKebun = session('selected_kebun');
 
-    // Pastikan selalu return array, bahkan ketika kosong
-    $afdBagian = DB::connection('AMCO')
-        ->table('AMCO_Afdeling')
-        ->select('KodeAfdeling', 'NamaAfdeling')
-        ->where('KodeKebun', $selectedKebun)
-        ->get() ?? [];
+        // Pastikan selalu return array, bahkan ketika kosong
+        $afdBagian = DB::connection('AMCO')
+            ->table('AMCO_Afdeling')
+            ->select('KodeAfdeling', 'NamaAfdeling')
+            ->where('KodeKebun', $selectedKebun)
+            ->get() ?? [];
 
-    // Inisialisasi dengan array kosong
-    $karyawan = [];
-    $absen = [];
-    $target_alokasi = [];
+        // Inisialisasi dengan array kosong
+        $karyawan = [];
+        $absen = [];
+        $target_alokasi = [];
 
-    if ($request->has(['reg', 'kd'])) {
-        $reg = $request->input('reg');
-        $kd = str_replace('AFD', '', $request->input('kd'));
+        if ($request->has(['reg', 'kd'])) {
+            $reg = $request->input('reg');
+            $kd = str_replace('AFD', '', $request->input('kd'));
 
-        $dataExists = DB::connection("checkroll")
-            ->table("GajiAbsensi")
-            ->where("regmdr", $reg)
-            ->where("kodeafd", $kd)
-            ->exists();
+            $dataExists = DB::connection("checkroll")
+                ->table("GajiAbsensi")
+                ->where("regmdr", $reg)
+                ->where("kodeafd", $kd)
+                ->exists();
 
-        if ($dataExists) {
-            $karyawan = DB::connection('AMCO')
-                ->table('AMCO_MandorKaryawan as mk')
-                ->join('AMCO_Dik as d', 'mk.Register', '=', 'd.REG')
-                ->where('mk.regmdr', $reg)
-                ->where('mk.KodeAfdeling', $request->kd)
-                ->select([
-                    'd.REG',
-                    'd.REG_SAP',
-                    'd.NAMA',
-                    'd.NAMA_JAB',
-                    'd.KD_AFD',
-                    
-                ])
-                ->distinct()
-                ->get() ?? [];
+            if ($dataExists) {
+                $karyawan = DB::connection('AMCO')
+                    ->table('AMCO_MandorKaryawan as mk')
+                    ->join('AMCO_Dik as d', 'mk.Register', '=', 'd.REG')
+                    ->where('mk.regmdr', $reg)
+                    ->where('mk.KodeAfdeling', $request->kd)
+                    ->select([
+                        'd.REG',
+                        'd.REG_SAP',
+                        'd.NAMA',
+                        'd.NAMA_JAB',
+                        'd.KD_AFD',
+                        
+                    ])
+                    ->distinct()
+                    ->get() ?? [];
 
-            $absen = DB::Connection("AMCO")
-                ->table("AMCO_KodeAbsen")
-                ->select('KodeAbsen', 'Uraian')
-                ->get() ?? [];
+                $absen = DB::Connection("AMCO")
+                    ->table("AMCO_KodeAbsen")
+                    ->select('KodeAbsen', 'Uraian')
+                    ->get() ?? [];
 
-            $target_alokasi = DB::connection('AMCO')
-            ->table('AMCO_TargetAlokasiBiaya')
-            ->select('TargetAlokasi', 'Uraian')
+                $target_alokasi = DB::connection('AMCO')
+                ->table('AMCO_TargetAlokasiBiaya')
+                ->select('TargetAlokasi', 'Uraian')
+                ->get();
+
+                if ($target_alokasi->isEmpty()) {
+                    logger()->error('Data Target Alokasi kosong');
+                } else {
+                    logger()->info('Data Target Alokasi:', $target_alokasi->toArray());
+                }
+            
+                session()->put([
+                    'target_alokasi' => $target_alokasi,
+                    'absen' => $absen,
+                    'karyawan' => $karyawan,
+                    'reg' => $reg,
+                    'kd' => $kd
+                ]);
+            }
+        }
+
+        $aktifitas = DB::table('AMCO.dbo.AMCO_Aktifitas')
+            ->where('KomoditiCode', 'TH')
+            ->where('stat', 1)
+            ->select('Aktifitas', 'Uraian')
+            ->orderBy('Aktifitas')
             ->get();
 
-            if ($target_alokasi->isEmpty()) {
-                logger()->error('Data Target Alokasi kosong');
-            } else {
-                logger()->info('Data Target Alokasi:', $target_alokasi->toArray());
-            }
-        
-            session()->put([
-                'target_alokasi' => $target_alokasi,
-                'absen' => $absen,
-                'karyawan' => $karyawan,
-                'reg' => $reg,
-                'kd' => $kd
-            ]);
-        }
+        return view('checkroll.komoditi_teh', [
+            'afdBagian' => $afdBagian,
+            'karyawan' => $karyawan,
+            'absen' => $absen,
+            'target_alokasi' => $target_alokasi,
+            'aktifitas' => $aktifitas,
+            'error' => session('error'),
+            'success' => session('success')
+        ]);
     }
-
-    return view('checkroll.komoditi_teh', [
-        'afdBagian' => $afdBagian,
-        'karyawan' => $karyawan,
-        'absen' => $absen,
-        'target_alokasi' => $target_alokasi,
-        'error' => session('error'),
-        'success' => session('success')
-    ]);
-}
 
 
 
@@ -167,153 +175,203 @@ class CheckrollController extends Controller
     
 
     public function simpanAbsensi(Request $request)
-{
-    DB::connection('AMCO')->beginTransaction();
+    {
+        $selectedKebun = session('selected_kebun');
+        $plant = DB::connection('AMCO')->table('AMCO_Afdeling')
+        ->where('KodeKebun', $selectedKebun)
+        ->value('Plant') ?? 'Tidak Diketahui'; 
 
-    try {
-        $dataKaryawan = json_decode($request->data, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception('Format data tidak valid.');
+        // Ambil KomoditiCode dari data yang dikirim
+        $komoditiCode = $request->input('komoditi_code', 'TH');
+
+        DB::connection('AMCO')->beginTransaction();
+
+        try {
+            $dataKaryawan = json_decode($request->data, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \Exception('Format data tidak valid.');
+            }
+
+            // Debug log yang lebih detail
+            \Log::info('Data lengkap yang diterima:', $dataKaryawan);
+
+            foreach ($dataKaryawan as $data) {
+                // Hanya skip jika target alokasi FF dan aktifitas kosong
+                if ($data['TargetAlokasiBiaya'] == 'FF' && empty($data['Aktifitas'])) {
+                    \Log::warning('Data aktifitas kosong untuk register: ' . $data['register']);
+                    continue;
+                }
+
+                // Ambil RegmdrSAP dan RegSAP dari AMCO_MandorKaryawan
+                $mandorData = DB::connection('AMCO')
+                    ->table('AMCO_MandorKaryawan')
+                    ->where('Register', $data['register'])
+                    ->where('KodeAfdeling', $data['Afdeling'])
+                    ->where('KodeUnit', $data['plant'])
+                    ->select('RegmdrSAP', 'RegSAP')
+                    ->first();
+                $regmdrSAP = $mandorData->RegmdrSAP ?? '';
+                $regSAP = $mandorData->RegSAP ?? '';
+
+                // Ambil RegMBSAP dari AMCO_MandorBesar
+                $pengawasData = DB::connection('AMCO')
+                    ->table('AMCO_MandorBesar')
+                    ->where('KodeUnit', $data['plant'])
+                    ->where('KodeAfdeling', $data['Afdeling'])
+                    ->select('RegMBSAP')
+                    ->first();
+                $regmbSAP = $pengawasData->RegMBSAP ?? '';
+
+                DB::connection('AMCO')
+                    ->table('AMCO_KKerja_BKM')
+                    ->insert([
+                        'register' => $data['register'],
+                        'mandor' => $regmdrSAP,
+                        'Referensi' => $data['Referensi'],
+                        'Keterangan' => $data['Keterangan'],
+                        'Afdeling' => $data['Afdeling'],
+                        'Kehadiran' => $data['Kehadiran'],
+                        'TargetAlokasiBiaya' => $data['TargetAlokasiBiaya'],
+                        'LocationCode' => $data['LocationCode'],
+                        'thntnm' => $data['thntnm'],
+                        'Aktifitas' => $data['Aktifitas'],
+                        'Luasan' => $data['Luasan'],
+                        'kgpikul' => $data['kgpikul'],
+                        'stpikul' => $data['stpikul'],
+                        'grup' => $data['grup'],
+                        'Jendangan' => $data['Jendangan'],
+                        'Tanggal' => Carbon::createFromFormat('d-m-Y', $data['Tanggal'])->format('Y-m-d'),
+                        'kodeunit' => $data['plant'],
+                        'Afdeling1'=> $data['Afdeling'],
+                        'plant' => $plant,
+                        'plant1' => $plant,
+                        'regmdr'=> $data['mandor'],
+                        'KomoditiCode'=> $komoditiCode,
+                        'PengawasUtama'=> $regmbSAP,
+                        'NIK'=> $regSAP,
+                        'kodetrans'=>"",
+                        'LuasanUoM' => '',
+                        'Weight' => '',
+                        'WeightUoM' => '',
+                        'Lateks' => '',
+                        'BaseUnitofMeasure' => '',
+                        'Kompo' => '',
+                        'BaseUnitofMeasure1' => '',
+                        'Scrap' => '',
+                        'BaseUnitofMeasure2' => '',
+                        'KualitasPucuk' => '',
+                        'BaseUnitofMeasure4' => ''
+                    ]);
+            }
+
+            DB::connection('AMCO')->commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Data berhasil disimpan.'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::connection('AMCO')->rollBack();
+            \Log::error('Error saat menyimpan data:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getCostCenter()
+    {
+        $selectedKebun = session('selected_kebun');
+        
+        if (!$selectedKebun) {
+            return response()->json(['error' => 'Kebun tidak terdeteksi'], 400);
         }
 
-        // Debug log
-        \Log::info('Data yang diterima:', $dataKaryawan);
+        try {
+            $costCenters = DB::connection('AMCO')
+                ->table('AMCO_CostCenter')
+                ->select('CostCenter', 'Uraian')
+                ->where('KodeUnit', $selectedKebun)
+                ->where('stat', '1')
+                ->orderBy('CostCenter')
+                ->get();
 
-        foreach ($dataKaryawan as $data) {
-            // Debug log untuk setiap data
-            \Log::info('Memproses data karyawan:', $data);
+            return response()->json($costCenters);
 
-            DB::connection('AMCO')
-                ->table('AMCO_KKerja_BKM')
-                ->insert([
-                    'register' => $data['register'],
-                    'mandor' => $data['mandor'],
-                    'Referensi' => $data['Referensi'],
-                    'Keterangan' => $data['Keterangan'],
-                    'Afdeling' => $data['Afdeling'],
-                    'Kehadiran' => $data['Kehadiran'],
-                    'TargetAlokasiBiaya' => $data['TargetAlokasiBiaya'],
-                    'LocationCode' => $data['LocationCode'],
-                    'thntnm' => $data['thntnm'],
-                    'Aktifitas' => $data['Aktifitas'],
-                    'Luasan' => $data['Luasan'],
-                    'kgpikul' => $data['kgpikul'],
-                    'stpikul' => $data['stpikul'],
-                    'grup' => $data['grup'],
-                    'Jendangan' => $data['Jendangan'],
-                    'Tanggal' => Carbon::createFromFormat('d-m-Y', $data['Tanggal'])->format('Y-m-d'),
-                    'kodeunit' => $data['plant'],
-                    'Afdeling1'=> $data['Afdeling']
-                ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Gagal mengambil data Cost Center',
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        DB::connection('AMCO')->commit();
-        return response()->json([
-            'success' => true,
-            'message' => 'Data berhasil disimpan.'
-        ]);
-
-    } catch (\Exception $e) {
-        DB::connection('AMCO')->rollBack();
-        \Log::error('Error saat menyimpan data:', [
-            'message' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
-        ]);
-        return response()->json([
-            'success' => false,
-            'message' => 'Gagal menyimpan data: ' . $e->getMessage()
-        ], 500);
     }
-}
-
-public function getCostCenter()
-{
-    $selectedKebun = session('selected_kebun');
-    
-    if (!$selectedKebun) {
-        return response()->json(['error' => 'Kebun tidak terdeteksi'], 400);
-    }
-
-    try {
-        $costCenters = DB::connection('AMCO')
-            ->table('AMCO_CostCenter')
-            ->select('CostCenter', 'Uraian')
+    public function getBlokSAP(Request $request)
+    {
+        $selectedKebun = session('selected_kebun');
+        
+        $bloks = DB::connection('AMCO')
+            ->table('AMCO_BlokSAP')
+            ->select('Blok_SAP','NamaBlok', 'Uraian', 'ThnTnm')
             ->where('KodeUnit', $selectedKebun)
-            ->where('stat', '1')
-            ->orderBy('CostCenter')
+            ->where('KomoditiCode', 'TH')
+            ->orderBy('Blok_SAP')
             ->get();
 
-        return response()->json($costCenters);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'error' => 'Gagal mengambil data Cost Center',
-            'message' => $e->getMessage()
-        ], 500);
+        return $bloks->map(function($item) {
+            return [
+                'Blok_SAP' => $item->Blok_SAP,
+                'NamaBlok'=>$item->NamaBlok,
+                'Uraian' => $item->Uraian,
+                'ThnTnm' => $item->ThnTnm
+            ];
+        });
     }
-}
-public function getBlokSAP(Request $request)
-{
-    $selectedKebun = session('selected_kebun');
-    
-    $bloks = DB::connection('AMCO')
-        ->table('AMCO_BlokSAP')
-        ->select('Blok_SAP','NamaBlok', 'Uraian', 'ThnTnm')
-        ->where('KodeUnit', $selectedKebun)
-        ->where('KomoditiCode', 'TH')
-        ->orderBy('Blok_SAP')
-        ->get();
-
-    return $bloks->map(function($item) {
-        return [
-            'Blok_SAP' => $item->Blok_SAP,
-            'NamaBlok'=>$item->NamaBlok,
-            'Uraian' => $item->Uraian,
-            'ThnTnm' => $item->ThnTnm
-        ];
-    });
-}
-public function getAktifitasTH()
-{
-    $data = DB::table('AMCO.dbo.AMCO_Aktifitas')
-        ->where('KomoditiCode', 'TH')
-        ->select('Aktifitas', 'Uraian')
-        ->where('stat', 1)
-        ->orderBy('Aktifitas')
-        ->get();
-
-    return response()->json($data);
-}
-
-public function getMesinPetik(Request $request)
-{
-    $selectedKebun = session('selected_kebun');
-    $kodeAfd = $request->input('kode_afd');
-
-    \Log::info('Mengambil mesin petik', [
-        'kode_unit' => $selectedKebun,
-        'kode_afd' => $kodeAfd
-    ]);
-
-    try {
-        $mesinPetik = DB::connection('MASTERREF')
-            ->table('Ref_MesinPetik')
-            ->select('Dataran', 'KodeMesin', 'NamaAfd')
-            ->where('KodeUnit', $selectedKebun)
-            ->where('Kodeafd', $kodeAfd)
-            ->orderBy('KodeMesin')
+    public function getAktifitasTH()
+    {
+        $data = DB::table('AMCO.dbo.AMCO_Aktifitas')
+            ->where('KomoditiCode', 'TH')
+            ->select('Aktifitas', 'Uraian')
+            ->where('stat', 1)
+            ->orderBy('Aktifitas')
             ->get();
 
-        \Log::info('Data ditemukan:', $mesinPetik->toArray());
-
-        return response()->json($mesinPetik);
-
-    } catch (\Exception $e) {
-        \Log::error('Error:', ['message' => $e->getMessage()]);
-        return response()->json([
-            'error' => 'Gagal mengambil data',
-            'message' => $e->getMessage()
-        ], 500);
+        \Log::info('Data aktifitas dari database:', $data->toArray());
+        return response()->json($data);
     }
-}
+
+    public function getMesinPetik(Request $request)
+    {
+        $selectedKebun = session('selected_kebun');
+        $kodeAfd = $request->input('kode_afd');
+
+        \Log::info('Mengambil mesin petik', [
+            'kode_unit' => $selectedKebun,
+            'kode_afd' => $kodeAfd
+        ]);
+
+        try {
+            $mesinPetik = DB::connection('MASTERREF')
+                ->table('Ref_MesinPetik')
+                ->select('Dataran', 'KodeMesin', 'NamaAfd')
+                ->where('KodeUnit', $selectedKebun)
+                ->where('Kodeafd', $kodeAfd)
+                ->orderBy('KodeMesin')
+                ->get();
+
+            \Log::info('Data ditemukan:', $mesinPetik->toArray());
+
+            return response()->json($mesinPetik);
+
+        } catch (\Exception $e) {
+            \Log::error('Error:', ['message' => $e->getMessage()]);
+            return response()->json([
+                'error' => 'Gagal mengambil data',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

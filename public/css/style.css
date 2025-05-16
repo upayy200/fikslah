@@ -9,7 +9,7 @@
 .navbar .dropdown:hover > .dropdown-menu {
     opacity: 1;
     visibility: visible;
-    transition-delay: 0.3s; /* Tambahkan delay 0.5 detik */
+    transition-delay: 0.3s;
 }
 
 /* Agar submenu dropdown muncul ke samping */
@@ -38,4 +38,183 @@
 .dropdown-submenu .dropdown-menu.show {
     opacity: 1;
     visibility: visible;
+}
+
+/* Style untuk form dan container */
+.container {
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    padding: 25px;
+    margin-top: 20px;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-control {
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+    padding: 10px 15px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+}
+
+/* Style untuk tabel */
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    margin-bottom: 1rem;
+    background-color: transparent;
+}
+
+.table th {
+    background-color: #4CAF50;
+    color: white;
+    font-weight: 600;
+    padding: 15px;
+    text-align: center;
+    vertical-align: middle;
+    border: none;
+}
+
+.table td {
+    padding: 12px;
+    vertical-align: middle;
+    border: 1px solid #e2e8f0;
+}
+
+.table tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+.table tbody tr:hover {
+    background-color: #f1f8e9;
+}
+
+/* Style untuk input yang bisa diisi (hijau) */
+.form-control.editable {
+    background-color: #e8f5e9;
+    border-color: #4CAF50;
+}
+
+/* Style untuk input yang tidak bisa diisi (merah) */
+.form-control.readonly {
+    background-color: #ffebee;
+    border-color: #f44336;
+    cursor: not-allowed;
+}
+
+/* Style khusus untuk input tahun tanam */
+input[name*="[thntnm]"] {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    cursor: default !important;
+}
+
+/* Style untuk tombol */
+.btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+}
+
+.btn-primary:hover {
+    background-color: #388E3C;
+    border-color: #388E3C;
+}
+
+.btn-success {
+    background-color: #2196F3;
+    border-color: #2196F3;
+}
+
+.btn-success:hover {
+    background-color: #1976D2;
+    border-color: #1976D2;
+}
+
+/* Style untuk Select2 */
+.select2-container--default .select2-selection--single {
+    height: 42px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 5px;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--single {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: #4CAF50;
+}
+
+/* Style untuk datepicker */
+.datepicker {
+    background-color: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 15px;
+}
+
+.datepicker:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+}
+
+/* Style untuk label */
+label {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+}
+
+/* Style untuk alert */
+.alert {
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 1.5rem;
+}
+
+/* Style untuk judul */
+h4 {
+    color: #2d3748;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #4CAF50;
+}
+
+/* Style untuk scrollbar */
+.table-responsive::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #4CAF50;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #388E3C;
 }
